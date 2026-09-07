@@ -32,6 +32,12 @@ The revival release. Same engine, new plugin formats, new build.
 - `README.rst` moved to `docs/README-1.1.rst`; `README.md` is new.
 
 ### Fixed
+- Crash (integer division by zero) at unusual sample rates such as 1234.5 Hz:
+  the envelope slew limit overflowed the fixed-point range and the ceiling
+  division overflowed 32 bits. Found by `clap-validator` on x86; Apple
+  silicon saturated instead of trapping.
+- Oscillator phase accumulation wraps in unsigned arithmetic instead of
+  relying on signed overflow.
 - Bank import over sysex now refreshes the sounding patch
   (theabolton/hexter#9).
 - A bank loaded at an offset near the end of the 128 slots is truncated

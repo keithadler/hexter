@@ -51,9 +51,11 @@ struct _dx7_patch_t
 #define DOUBLE_TO_FP(x) lrint((x) * (double)FP_SIZE)
 
 #define FP_MULTIPLY(a, b)     ((int32_t)(((int64_t)(a) * (int64_t)(b)) >> FP_SHIFT))
-#define FP_DIVIDE_CEIL(n, d)  (((n) + (d) - 1) / (d))
+#define FP_DIVIDE_CEIL(n, d)  ((int32_t)(((int64_t)(n) + (int64_t)(d) - 1) / (int64_t)(d)))  /* 64-bit: n + d can exceed int32 */
 #define FP_ABS(x)             (abs(x))
 #define FP_RAND()             (rand() & FP_MASK)
+/* phase accumulators wrap on purpose; do it in unsigned so it is defined */
+#define FP_PHASE_ADD(p, i)    ((p) = (int32_t)((uint32_t)(p) + (uint32_t)(i)))
 
 #else /* HEXTER_USE_FLOATING_POINT */
 
@@ -68,6 +70,7 @@ struct _dx7_patch_t
 #define FP_DIVIDE_CEIL(n, d)  (lrintf((n) / (d) + 0.5f));
 #define FP_ABS(x)             (fabsf(x))
 #define FP_RAND()             ((float)rand() / (float)RAND_MAX)
+#define FP_PHASE_ADD(p, i)    ((p) += (i))
 
 #endif /* ! HEXTER_USE_FLOATING_POINT */
 

@@ -522,6 +522,54 @@ test_voices(void)
     CHECK(hexter_engine_new(10.0f) == NULL, "absurd sample rate refused");
 }
 
+/* ---- awkward sample rates (clap-validator's list, plus extremes) ---- */
+
+static void
+test_sample_rates(void)
+{
+    const float rates[] = { 1000.0f, 1234.5678f, 8000.0f, 12345.678f, 22050.0f, 44100.0f,
+                            45678.901f, 48000.0f, 88200.0f, 96000.0f, 123456.78f, 192000.0f,
+                            384000.0f, 768000.0f };
+    size_t r;
+
+    for (r = 0; r < sizeof(rates) / sizeof(rates[0]); r++) {
+        hexter_engine_t *e = hexter_engine_new(rates[r]);
+        hexter_event_t evs[4];
+        float out[512];
+        int i, k, nan = 0;
+        double energy = 0.0;
+        char *err = NULL;
+
+        CHECK(e != NULL, "engine at %g Hz", rates[r]);
+        if (!e) continue;
+        hexter_engine_load_bank_file(e, bank_path("dx7_roms.dx7"), 0, &err);
+        free(err);
+        memset(evs, 0, sizeof(evs));
+        for (k = 0; k < 128; k += 7) {
+            hexter_engine_select_program(e, k);
+            evs[0].type = HEXTER_EV_NOTE_ON; evs[0].a = (uint8_t)(24 + k / 2); evs[0].b = 1 + k; evs[0].frame = 0;
+            evs[1].type = HEXTER_EV_NOTE_ON; evs[1].a = 127; evs[1].b = 127; evs[1].frame = 3;
+            evs[2].type = HEXTER_EV_CONTROL_CHANGE; evs[2].a = 1; evs[2].b = 127; evs[2].frame = 5;
+            evs[3].type = HEXTER_EV_PITCH_BEND; evs[3].value = -8192; evs[3].frame = 7;
+            hexter_engine_render(e, out, 512, evs, 4);
+            for (i = 0; i < 30; i++) {
+                int j;
+                hexter_engine_render(e, out, 512, NULL, 0);
+                for (j = 0; j < 512; j++) {
+                    if (out[j] != out[j]) nan++;
+                    energy += (double)out[j] * out[j];
+                }
+            }
+            evs[0].type = HEXTER_EV_NOTE_OFF; evs[1].type = HEXTER_EV_NOTE_OFF;
+            hexter_engine_render(e, out, 512, evs, 2);
+            for (i = 0; i < 10; i++) hexter_engine_render(e, out, 512, NULL, 0);
+        }
+        CHECK(nan == 0, "%g Hz: %d NaN samples", rates[r], nan);
+        CHECK(energy > 0.0, "%g Hz: produced sound", rates[r]);
+        hexter_engine_free(e);
+    }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -534,6 +582,7 @@ main(int argc, char **argv)
     test_sysex();
     test_state();
     test_voices();
+    test_sample_rates();
 
     printf("%d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
