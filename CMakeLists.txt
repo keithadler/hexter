@@ -155,7 +155,9 @@ if(HEXTER_BUILD_DSSI)
             $<$<BOOL:${HEXTER_FLOATING_POINT}>:HEXTER_USE_FLOATING_POINT=1>)
         target_compile_options(hexter_dssi PRIVATE ${HEXTER_C_FLAGS} ${DSSI_CFLAGS_OTHER})
         target_link_libraries(hexter_dssi PRIVATE ${DSSI_LIBRARIES} Threads::Threads m)
-        set_target_properties(hexter_dssi PROPERTIES OUTPUT_NAME hexter PREFIX "" SUFFIX ".so")
+        # DSSI hosts look up ladspa_descriptor and dssi_descriptor by name
+        set_target_properties(hexter_dssi PROPERTIES OUTPUT_NAME hexter PREFIX "" SUFFIX ".so"
+                              C_VISIBILITY_PRESET default)
         install(TARGETS hexter_dssi LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/dssi)
         message(STATUS "hexter: building the legacy DSSI plugin")
     else()
