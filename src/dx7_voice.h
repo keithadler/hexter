@@ -26,8 +26,6 @@
 #ifndef _DX7_VOICE_H
 #define _DX7_VOICE_H
 
-#include <ladspa.h>
-
 #include "hexter_types.h"
 
 struct _dx7_patch_t
@@ -47,15 +45,17 @@ struct _dx7_patch_t
 #define FP_TO_INT(x)    ((x) >> FP_SHIFT)
 #define FP_TO_FLOAT(x)  ((float)(x) * (1.0f / (float)FP_SIZE))
 #define FP_TO_DOUBLE(x) ((double)(x) * (1.0 / (double)FP_SIZE))
-#define INT_TO_FP(x)    ((x) << FP_SHIFT)
+#define INT_TO_FP(x)    ((int32_t)((x) * FP_SIZE))  /* multiply: left-shifting a negative value is undefined in C */
 /* beware of using the next two with constants, they probably won't be optimized */
 #define FLOAT_TO_FP(x)  lrintf((x) * (float)FP_SIZE)
 #define DOUBLE_TO_FP(x) lrint((x) * (double)FP_SIZE)
 
 #define FP_MULTIPLY(a, b)     ((int32_t)(((int64_t)(a) * (int64_t)(b)) >> FP_SHIFT))
-#define FP_DIVIDE_CEIL(n, d)  (((n) + (d) - 1) / (d))
+#define FP_DIVIDE_CEIL(n, d)  ((int32_t)(((int64_t)(n) + (int64_t)(d) - 1) / (int64_t)(d)))  /* 64-bit: n + d can exceed int32 */
 #define FP_ABS(x)             (abs(x))
 #define FP_RAND()             (rand() & FP_MASK)
+/* phase accumulators wrap on purpose; do it in unsigned so it is defined */
+#define FP_PHASE_ADD(p, i)    ((p) = (int32_t)((uint32_t)(p) + (uint32_t)(i)))
 
 #else /* HEXTER_USE_FLOATING_POINT */
 
@@ -70,6 +70,7 @@ struct _dx7_patch_t
 #define FP_DIVIDE_CEIL(n, d)  (lrintf((n) / (d) + 0.5f));
 #define FP_ABS(x)             (fabsf(x))
 #define FP_RAND()             ((float)rand() / (float)RAND_MAX)
+#define FP_PHASE_ADD(p, i)    ((p) += (i))
 
 #endif /* ! HEXTER_USE_FLOATING_POINT */
 
@@ -306,7 +307,7 @@ void    dx7_voice_set_data(hexter_instance_t *instance, dx7_voice_t *voice);
 
 /* dx7_voice_render.c */
 void    dx7_voice_render(hexter_instance_t *instance, dx7_voice_t *voice,
-                         LADSPA_Data *out, unsigned long sample_count,
+                         float *out, unsigned long sample_count,
                          int do_control_update);
 
 /* dx7_voice_tables.c */

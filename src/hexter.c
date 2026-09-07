@@ -73,13 +73,13 @@ dssp_voicelist_mutex_trylock(hexter_instance_t *instance)
     return 0;
 }
 
-inline int
+int
 dssp_voicelist_mutex_lock(hexter_instance_t *instance)
 {
     return pthread_mutex_lock(&instance->voicelist_mutex);
 }
 
-inline int
+int
 dssp_voicelist_mutex_unlock(hexter_instance_t *instance)
 {
     return pthread_mutex_unlock(&instance->voicelist_mutex);
@@ -292,11 +292,15 @@ hexter_get_program(LADSPA_Handle handle, unsigned long index)
 {
     hexter_instance_t *instance = (hexter_instance_t *)handle;
     static DSSI_Program_Descriptor pd;
+    static char name[11];
 
     DEBUG_MESSAGE(DB_DSSI, " hexter_get_program called with %lu\n", index);
 
     if (index < 128) {
-        hexter_instance_set_program_descriptor(instance, &pd, 0, index);
+        pd.Bank = 0;
+        pd.Program = index;
+        hexter_instance_get_program_name(instance, index, name);
+        pd.Name = name;
         return &pd;
     }
     return NULL;

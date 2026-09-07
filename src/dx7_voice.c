@@ -48,7 +48,7 @@ dx7_voice_new(void)
 {
     dx7_voice_t *voice;
 
-    voice = (dx7_voice_t *)malloc(sizeof(dx7_voice_t));
+    voice = (dx7_voice_t *)calloc(1, sizeof(dx7_voice_t));
     if (voice) {
         voice->status = DX7_VOICE_OFF;
     }
@@ -310,6 +310,7 @@ dx7_op_eg_set_increment(hexter_instance_t *instance, dx7_op_eg_t *eg,
     if (need_compensation) {
 
         int32_t precomp_duration = FP_DIVIDE_CEIL(INT_TO_FP(31) - eg->value, instance->dx7_eg_max_slew);
+        if (precomp_duration < 0) precomp_duration = 0;
 
         if (precomp_duration >= eg->duration) {
 
@@ -317,6 +318,8 @@ dx7_op_eg_set_increment(hexter_instance_t *instance, dx7_op_eg_t *eg,
             eg->increment = (eg->target - eg->value) / (dx7_sample_t)eg->duration;
             if (eg->increment > instance->dx7_eg_max_slew) {
                 eg->duration = FP_DIVIDE_CEIL(eg->target - eg->value, instance->dx7_eg_max_slew);
+                if (eg->duration < 1) eg->duration = 1;
+                if (eg->postcomp_duration < 1) eg->postcomp_duration = 1;
                 eg->increment = (eg->target - eg->value) / (dx7_sample_t)eg->duration;
             }
             HEXTER_DEBUG_ENGINE_SLEW_CHECK(eg->increment, "slew violation 0");
@@ -327,6 +330,8 @@ dx7_op_eg_set_increment(hexter_instance_t *instance, dx7_op_eg_t *eg,
             eg->increment = (eg->target - eg->value) / (dx7_sample_t)eg->duration;
             if (eg->increment > instance->dx7_eg_max_slew) {
                 eg->duration = FP_DIVIDE_CEIL(eg->target - eg->value, instance->dx7_eg_max_slew);
+                if (eg->duration < 1) eg->duration = 1;
+                if (eg->postcomp_duration < 1) eg->postcomp_duration = 1;
                 eg->increment = (eg->target - eg->value) / (dx7_sample_t)eg->duration;
             }
             HEXTER_DEBUG_ENGINE_SLEW_CHECK(eg->increment, "slew violation 1");
@@ -342,6 +347,8 @@ dx7_op_eg_set_increment(hexter_instance_t *instance, dx7_op_eg_t *eg,
                                          (dx7_sample_t)eg->postcomp_duration;
             if (eg->postcomp_increment > instance->dx7_eg_max_slew) {
                 eg->postcomp_duration = FP_DIVIDE_CEIL(eg->target - INT_TO_FP(31), instance->dx7_eg_max_slew);
+                if (eg->duration < 1) eg->duration = 1;
+                if (eg->postcomp_duration < 1) eg->postcomp_duration = 1;
                 eg->postcomp_increment = (eg->target - INT_TO_FP(31)) /
                                              (dx7_sample_t)eg->postcomp_duration;
             }
@@ -355,6 +362,8 @@ dx7_op_eg_set_increment(hexter_instance_t *instance, dx7_op_eg_t *eg,
         eg->increment = (eg->target - eg->value) / (dx7_sample_t)eg->duration;
         if (FP_ABS(eg->increment) > instance->dx7_eg_max_slew) {
             eg->duration = FP_DIVIDE_CEIL(FP_ABS(eg->target - eg->value), instance->dx7_eg_max_slew);
+                if (eg->duration < 1) eg->duration = 1;
+                if (eg->postcomp_duration < 1) eg->postcomp_duration = 1;
             eg->increment = (eg->target - eg->value) / (dx7_sample_t)eg->duration;
         }
         HEXTER_DEBUG_ENGINE_SLEW_CHECK(eg->increment, "slew violation 2");
@@ -612,7 +621,14 @@ dx7_eg_init_constants(hexter_instance_t *instance)
                      (dx7_voice_eg_rate_rise_percent[99] -
                       dx7_voice_eg_rate_rise_percent[0]);
 
-    instance->dx7_eg_max_slew = FLOAT_TO_FP(99.0f / (duration * instance->sample_rate));
+    /* maximum envelope movement per frame. Computed in double and clamped:
+     * at low sample rates the raw value overflows the fixed-point range and
+     * the conversion could land on zero, which the envelope code divides by. */
+    double slew = 99.0 / ((double)duration * (double)instance->sample_rate);
+    if (slew > 8.0) slew = 8.0;   /* keeps (level + slew) inside int32 in fixed point */
+    instance->dx7_eg_max_slew = DOUBLE_TO_FP(slew);
+    if (instance->dx7_eg_max_slew < DOUBLE_TO_FP(1.0 / 16777216.0))
+        instance->dx7_eg_max_slew = DOUBLE_TO_FP(1.0 / 16777216.0);
 
     instance->nugget_rate = instance->sample_rate / (float)HEXTER_NUGGET_SIZE;
 

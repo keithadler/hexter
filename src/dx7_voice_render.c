@@ -279,7 +279,7 @@ double_equality(double a, double b)
  */
 void
 dx7_voice_render(hexter_instance_t *instance, dx7_voice_t *voice,
-                 LADSPA_Data *out, unsigned long sample_count,
+                 float *out, unsigned long sample_count,
                  int do_control_update)
 {
     unsigned long       sample;
@@ -338,12 +338,12 @@ dx7_voice_render(hexter_instance_t *instance, dx7_voice_t *voice,
             out[sample] += FP_TO_FLOAT(output) * voice->volume_value;
 
             /* update runtime parameters for next sample */
-            voice->op[OP_6].phase += voice->op[OP_6].phase_increment;
-            voice->op[OP_5].phase += voice->op[OP_5].phase_increment;
-            voice->op[OP_4].phase += voice->op[OP_4].phase_increment;
-            voice->op[OP_3].phase += voice->op[OP_3].phase_increment;
-            voice->op[OP_2].phase += voice->op[OP_2].phase_increment;
-            voice->op[OP_1].phase += voice->op[OP_1].phase_increment;
+            FP_PHASE_ADD(voice->op[OP_6].phase, voice->op[OP_6].phase_increment);
+            FP_PHASE_ADD(voice->op[OP_5].phase, voice->op[OP_5].phase_increment);
+            FP_PHASE_ADD(voice->op[OP_4].phase, voice->op[OP_4].phase_increment);
+            FP_PHASE_ADD(voice->op[OP_3].phase, voice->op[OP_3].phase_increment);
+            FP_PHASE_ADD(voice->op[OP_2].phase, voice->op[OP_2].phase_increment);
+            FP_PHASE_ADD(voice->op[OP_1].phase, voice->op[OP_1].phase_increment);
 
             dx7_op_eg_process(instance, &voice->op[OP_6].eg);
             dx7_op_eg_process(instance, &voice->op[OP_5].eg);
@@ -398,12 +398,12 @@ dx7_voice_render(hexter_instance_t *instance, dx7_voice_t *voice,
             /* mix voice output into output buffer */ \
             out[sample] += FP_TO_FLOAT(output) * voice->volume_value; \
             /* update runtime parameters for next sample */ \
-            voice->op[OP_6].phase += voice->op[OP_6].phase_increment; \
-            voice->op[OP_5].phase += voice->op[OP_5].phase_increment; \
-            voice->op[OP_4].phase += voice->op[OP_4].phase_increment; \
-            voice->op[OP_3].phase += voice->op[OP_3].phase_increment; \
-            voice->op[OP_2].phase += voice->op[OP_2].phase_increment; \
-            voice->op[OP_1].phase += voice->op[OP_1].phase_increment; \
+            FP_PHASE_ADD(voice->op[OP_6].phase, voice->op[OP_6].phase_increment); \
+            FP_PHASE_ADD(voice->op[OP_5].phase, voice->op[OP_5].phase_increment); \
+            FP_PHASE_ADD(voice->op[OP_4].phase, voice->op[OP_4].phase_increment); \
+            FP_PHASE_ADD(voice->op[OP_3].phase, voice->op[OP_3].phase_increment); \
+            FP_PHASE_ADD(voice->op[OP_2].phase, voice->op[OP_2].phase_increment); \
+            FP_PHASE_ADD(voice->op[OP_1].phase, voice->op[OP_1].phase_increment); \
             dx7_op_eg_process(instance, &voice->op[OP_6].eg); \
             dx7_op_eg_process(instance, &voice->op[OP_5].eg); \
             dx7_op_eg_process(instance, &voice->op[OP_4].eg); \

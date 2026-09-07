@@ -1,3 +1,8 @@
+2026: Keith Adler <keith.adler@icloud.com> ported hexter to CLAP and LV2,
+replaced the autotools build with CMake, separated the engine from the plugin
+API, added sysex over MIDI, the hexter-render tool, tests and CI. See
+CHANGELOG.md.
+
                                 hexter
                                 ======
                A Yamaha DX7 modeling software synthesizer

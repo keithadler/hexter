@@ -23,9 +23,7 @@
 
 #include "hexter_types.h"
 
-int   dx7_bulk_dump_checksum(uint8_t *data, int length);
-int   dx7_patchbank_load(const char *filename, dx7_patch_t *firstpatch,
-                         int maxpatches, char **errmsg);
+#include "dx7_bank.h"
 char *encode_7in6(uint8_t *data, int length);
 void  gui_data_patches_init(void);
 void  gui_data_patches_free(void);
