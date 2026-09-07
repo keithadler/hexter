@@ -279,7 +279,7 @@ double_equality(double a, double b)
  */
 void
 dx7_voice_render(hexter_instance_t *instance, dx7_voice_t *voice,
-                 LADSPA_Data *out, unsigned long sample_count,
+                 float *out, unsigned long sample_count,
                  int do_control_update)
 {
     unsigned long       sample;

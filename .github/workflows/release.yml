@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-latest
+          - name: macos-universal
+            os: macos-latest
+          - name: windows-x86_64
+            os: windows-latest
+    defaults:
+      run:
+        shell: ${{ matrix.os == 'windows-latest' && 'msys2 {0}' || 'bash' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            git
+            zip
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DHEXTER_BUILD_DSSI=OFF ${{ matrix.os == 'windows-latest' && '-G Ninja' || '' }} ${{ matrix.os == 'macos-latest' && '-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"' || '' }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          PKG=hexter-$VERSION-${{ matrix.name }}
+          mkdir -p $PKG/banks
+          cp -R build/hexter.clap $PKG/
+          cp -R build/lv2/hexter.lv2 $PKG/
+          cp build/hexter-render* $PKG/ 2>/dev/null || true
+          cp extra/*.dx7 $PKG/banks/
+          cp README.md CHANGELOG.md COPYING AUTHORS $PKG/
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            tar czf $PKG.tar.gz $PKG
+          else
+            zip -r -q $PKG.zip $PKG
+          fi
+          ls -la
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" hexter-*.tar.gz hexter-*.zip --clobber 2>/dev/null || gh release upload "$GITHUB_REF_NAME" hexter-* --clobber

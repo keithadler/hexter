@@ -48,7 +48,7 @@ dx7_voice_new(void)
 {
     dx7_voice_t *voice;
 
-    voice = (dx7_voice_t *)malloc(sizeof(dx7_voice_t));
+    voice = (dx7_voice_t *)calloc(1, sizeof(dx7_voice_t));
     if (voice) {
         voice->status = DX7_VOICE_OFF;
     }

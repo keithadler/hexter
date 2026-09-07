@@ -28,9 +28,6 @@
 
 #include <pthread.h>
 
-#include <ladspa.h>
-#include <dssi.h>
-
 #include "hexter_types.h"
 #include "hexter.h"
 
@@ -47,10 +44,12 @@ struct _hexter_instance_t
     hexter_instance_t *next;
 
     /* output */
-    LADSPA_Data    *output;
+    float          *output;
     /* input */
-    LADSPA_Data    *tuning;
-    LADSPA_Data    *volume;
+    float          *tuning;
+    float          *volume;
+    float           tuning_value;      /* storage for tuning when not host-owned (engine API) */
+    float           volume_value;      /* storage for volume when not host-owned (engine API) */
 
     float           sample_rate;
     float           nugget_rate;       /* nuggets per second */
@@ -151,6 +150,8 @@ void  hexter_instance_key_pressure(hexter_instance_t *instance,
 void  hexter_instance_damp_voices(hexter_instance_t *instance);
 void  hexter_instance_control_change(hexter_instance_t *instance,
                                      unsigned int param, signed int value);
+void  hexter_instance_apply_op_param(hexter_instance_t *instance, int opnum,
+                                     int param, signed int value);
 void  hexter_instance_channel_pressure(hexter_instance_t *instance,
                                        signed int pressure);
 void  hexter_instance_pitch_bend(hexter_instance_t *instance, signed int value);
@@ -158,10 +159,8 @@ void  hexter_instance_init_controls(hexter_instance_t *instance);
 void  hexter_instance_set_performance_data(hexter_instance_t *instance);
 void  hexter_instance_select_program(hexter_instance_t *instance,
                                      unsigned long bank, unsigned long program);
-int   hexter_instance_set_program_descriptor(hexter_instance_t *instance,
-                                             DSSI_Program_Descriptor *pd,
-                                             unsigned long bank,
-                                             unsigned long program);
+void  hexter_instance_get_program_name(hexter_instance_t *instance,
+                                       unsigned long program, char *name);
 char *hexter_instance_handle_patches(hexter_instance_t *instance,
                                      const char *key, const char *value);
 char *hexter_instance_handle_edit_buffer(hexter_instance_t *instance,

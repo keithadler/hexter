@@ -1,0 +1,109 @@
+@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix midi:  <http://lv2plug.in/ns/ext/midi#> .
+@prefix patch: <http://lv2plug.in/ns/ext/patch#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix state: <http://lv2plug.in/ns/ext/state#> .
+@prefix units: <http://lv2plug.in/ns/extensions/units#> .
+@prefix urid:  <http://lv2plug.in/ns/ext/urid#> .
+@prefix work:  <http://lv2plug.in/ns/ext/worker#> .
+@prefix hex:   <https://github.com/keithadler/hexter#> .
+
+hex:bank
+    a lv2:Parameter ;
+    rdfs:label "Bank file" ;
+    rdfs:comment "A DX7 bank: .syx, .dx7, .mid, .tx7, .snd, .bnk, .dx2 or raw packed voices. Loaded into programs 1-128." ;
+    rdfs:range atom:Path .
+
+<https://github.com/keithadler/hexter>
+    a lv2:Plugin , lv2:InstrumentPlugin ;
+    doap:name "hexter" ;
+    doap:license <http://opensource.org/licenses/gpl-2.0> ;
+    doap:maintainer [
+        foaf:name "Keith Adler" ;
+        foaf:homepage <https://github.com/keithadler/hexter>
+    ] ;
+    doap:developer [
+        foaf:name "Sean Bolton"
+    ] ;
+    rdfs:comment "Yamaha DX7 modeling FM synthesizer. Loads DX7 banks and answers to DX7 sysex." ;
+    lv2:minorVersion 2 ;
+    lv2:microVersion 0 ;
+    lv2:requiredFeature urid:map ;
+    lv2:optionalFeature lv2:hardRTCapable , work:schedule , state:mapPath ;
+    lv2:extensionData state:interface , work:interface ;
+    patch:writable hex:bank ;
+    lv2:port [
+        a lv2:InputPort , atom:AtomPort ;
+        atom:bufferType atom:Sequence ;
+        atom:supports midi:MidiEvent , patch:Message ;
+        lv2:designation lv2:control ;
+        lv2:index 0 ;
+        lv2:symbol "control" ;
+        lv2:name "Control"
+    ] , [
+        a lv2:OutputPort , atom:AtomPort ;
+        atom:bufferType atom:Sequence ;
+        atom:supports patch:Message ;
+        lv2:designation lv2:control ;
+        lv2:index 1 ;
+        lv2:symbol "notify" ;
+        lv2:name "Notify"
+    ] , [
+        a lv2:AudioPort , lv2:OutputPort ;
+        lv2:index 2 ;
+        lv2:symbol "out" ;
+        lv2:name "Output"
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 3 ;
+        lv2:symbol "tuning" ;
+        lv2:name "Tuning" ;
+        lv2:default 440.0 ;
+        lv2:minimum 415.3 ;
+        lv2:maximum 466.2 ;
+        units:unit units:hz
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 4 ;
+        lv2:symbol "volume" ;
+        lv2:name "Volume" ;
+        lv2:default 0.0 ;
+        lv2:minimum -70.0 ;
+        lv2:maximum 20.0 ;
+        units:unit units:db
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 5 ;
+        lv2:symbol "polyphony" ;
+        lv2:name "Polyphony" ;
+        lv2:portProperty lv2:integer ;
+        lv2:default 10 ;
+        lv2:minimum 1 ;
+        lv2:maximum 64
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 6 ;
+        lv2:symbol "voice_mode" ;
+        lv2:name "Voice mode" ;
+        lv2:portProperty lv2:integer , lv2:enumeration ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 3 ;
+        lv2:scalePoint [ rdfs:label "Poly" ; rdf:value 0 ] ,
+                       [ rdfs:label "Mono" ; rdf:value 1 ] ,
+                       [ rdfs:label "Mono legato" ; rdf:value 2 ] ,
+                       [ rdfs:label "Mono both" ; rdf:value 3 ]
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 7 ;
+        lv2:symbol "program" ;
+        lv2:name "Program" ;
+        lv2:portProperty lv2:integer ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 127
+    ] .

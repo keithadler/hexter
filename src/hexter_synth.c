@@ -431,9 +431,6 @@ static void
 hexter_instance_update_op_param(hexter_instance_t *instance, int opnum,
                                 int param, signed int value)
 {
-    int i;
-    dx7_voice_t* voice;
-
     /* scale the value */
     switch(param){
         case 0:
@@ -485,7 +482,23 @@ hexter_instance_update_op_param(hexter_instance_t *instance, int opnum,
          * until we can lock the mutex, if it's really important. */
     }
 
-    /* check if any playing voices need updating */
+    hexter_instance_apply_op_param(instance, opnum, param, value);
+}
+
+/*
+ * hexter_instance_apply_op_param
+ *
+ * apply an already-scaled (0-99 etc.) operator parameter change to any
+ * playing voices. opnum is 0 for OP1 through 5 for OP6; param is the
+ * parameter index within the operator (0-20, in DX7 voice data order).
+ */
+void
+hexter_instance_apply_op_param(hexter_instance_t *instance, int opnum,
+                               int param, signed int value)
+{
+    int i;
+    dx7_voice_t* voice;
+
     for (i = 0; i < instance->max_voices; i++) {
         voice = instance->voice[i];
         if (_PLAYING(voice)) {
@@ -849,26 +862,20 @@ hexter_instance_select_program(hexter_instance_t *instance, unsigned long bank,
 }
 
 /*
- * hexter_instance_set_program_descriptor
+ * hexter_instance_get_program_name
+ *
+ * copy the 10-character name of program (plus NUL) into name, which must
+ * hold at least 11 bytes.
  */
-int
-hexter_instance_set_program_descriptor(hexter_instance_t *instance,
-                                       DSSI_Program_Descriptor *pd,
-                                       unsigned long bank,
-                                       unsigned long program)
+void
+hexter_instance_get_program_name(hexter_instance_t *instance,
+                                 unsigned long program, char *name)
 {
-    static char name[11];
-
-    /* no support for banks, so we just ignore the bank number */
     if (program >= 128) {
-        return 0;
+        name[0] = 0;
+        return;
     }
-    pd->Bank = bank;
-    pd->Program = program;
-    /* -FIX- some character set conversion would be appropriate here, but to what? */
     dx7_voice_copy_name(name, &instance->patches[program]);
-    pd->Name = name;
-    return 1;
 }
 
 /*
