@@ -62,25 +62,19 @@ jobs:
           LV2_PATH=$PWD/build/lv2 lv2ls | grep -q keithadler/hexter
           LV2_PATH=$PWD/build/lv2 lv2info https://github.com/keithadler/hexter
 
-      - name: Download clap-validator
+      - name: Validate with clap-validator
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release download 0.4.1 --repo free-audio/clap-validator --pattern "*${{ matrix.validator }}*" --dir validator
-          cd validator && unzip -o -q *.zip && chmod +x clap-validator* || true
-          ls -la
-
-      - name: Run clap-validator
-        run: |
-          if [ "${{ matrix.os }}" = "macos-latest" ]; then
-            PLUGIN=build/hexter.clap
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            PLUGIN=build/hexter.clap
-          else
-            PLUGIN=build/hexter.clap
-          fi
-          VALIDATOR=$(find validator -name 'clap-validator*' -type f | grep -v '\.zip$' | head -1)
-          "$VALIDATOR" validate --only-failed "$PLUGIN"
+          cd validator
+          for z in *.zip; do unzip -o -q "$z"; done
+          for t in $(find . -name '*.tar.gz'); do tar xzf "$t" -C "$(dirname "$t")"; done
+          V=$(find . -type f \( -name clap-validator -o -name clap-validator.exe \) | head -1)
+          chmod +x "$V"
+          cd ..
+          "validator/$V" validate --only-failed build/hexter.clap
 
       - name: Upload build
         uses: actions/upload-artifact@v4
