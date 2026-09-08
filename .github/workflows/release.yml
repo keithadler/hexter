@@ -56,6 +56,7 @@ jobs:
           mkdir -p $PKG/banks
           cp -R build/hexter.clap $PKG/
           cp -R build/lv2/hexter.lv2 $PKG/
+          [ -d build/auv2/hexter.component ] && cp -R build/auv2/hexter.component $PKG/ || true
           cp build/hexter-render* $PKG/ 2>/dev/null || true
           cp extra/*.dx7 $PKG/banks/
           cp README.md CHANGELOG.md COPYING AUTHORS $PKG/

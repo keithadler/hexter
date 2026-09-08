@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Audio Unit (`hexter.component`, macOS) built from the CLAP through
+  clap-wrapper 0.16.0, for Logic Pro and GarageBand. Passes `auval`.
+
 ## 2.0.0 (2026-09-07)
 
 The revival release. Same engine, new plugin formats, new build.

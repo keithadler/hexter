@@ -28,6 +28,7 @@
 #include <clap/clap.h>
 
 #include "hexter_engine.h"
+#include "hexter_clap_entry.h"
 
 #define HEXTER_CLAP_ID   "com.github.keithadler.hexter"
 #define MAX_EVENTS       4096
@@ -757,27 +758,32 @@ static const clap_plugin_factory_t hexter_factory = {
 
 /* ---- entry ---- */
 
-static bool
-entry_init(const char *plugin_path)
+/* The entry functions have external linkage so the same object can be
+ * linked statically into clap-wrapper's Audio Unit build (see
+ * hexter_clap_entry.cpp); the CLAP module itself exports clap_entry. */
+bool
+hexter_clap_init(const char *plugin_path)
 {
     return true;
 }
 
-static void
-entry_deinit(void)
+void
+hexter_clap_deinit(void)
 {
 }
 
-static const void *
-entry_get_factory(const char *factory_id)
+const void *
+hexter_clap_get_factory(const char *factory_id)
 {
     if (!strcmp(factory_id, CLAP_PLUGIN_FACTORY_ID)) return &hexter_factory;
     return NULL;
 }
 
+#ifndef HEXTER_CLAP_NO_ENTRY
 CLAP_EXPORT const clap_plugin_entry_t clap_entry = {
     .clap_version = CLAP_VERSION_INIT,
-    .init         = entry_init,
-    .deinit       = entry_deinit,
-    .get_factory  = entry_get_factory,
+    .init         = hexter_clap_init,
+    .deinit       = hexter_clap_deinit,
+    .get_factory  = hexter_clap_get_factory,
 };
+#endif

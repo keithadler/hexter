@@ -83,6 +83,7 @@ jobs:
           path: |
             build/hexter.clap
             build/lv2/hexter.lv2
+            build/auv2/hexter.component
             build/hexter-render
             build/hexter-render.exe
           if-no-files-found: ignore

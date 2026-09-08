@@ -11,7 +11,7 @@ editor still build on Linux when their libraries are installed.
 
 | | |
 |---|---|
-| Plugins | CLAP (`hexter.clap`), LV2 (`hexter.lv2`), DSSI (legacy, Linux) |
+| Plugins | CLAP (`hexter.clap`), LV2 (`hexter.lv2`), Audio Unit (`hexter.component`, macOS), DSSI (legacy, Linux) |
 | Platforms | Linux, macOS (Apple silicon and Intel), Windows |
 | Banks | `.syx`, `.dx7`, `.mid` (sysex inside a MIDI file), `.tx7`, `.snd`, `.bnk`, `.dx2`, raw packed voices |
 | Sysex | DX7 single voice, 32-voice bulk dump, voice and function parameter changes |
@@ -22,11 +22,17 @@ editor still build on Linux when their libraries are installed.
 Builds for every platform are attached to each
 [release](https://github.com/keithadler/hexter/releases). Unzip and copy:
 
-| Platform | CLAP | LV2 |
-|---|---|---|
-| Linux | `~/.clap/` | `~/.lv2/` |
-| macOS | `~/Library/Audio/Plug-Ins/CLAP/` | `~/Library/Audio/Plug-Ins/LV2/` |
-| Windows | `%COMMONPROGRAMFILES%\CLAP\` | `%APPDATA%\LV2\` |
+| Platform | CLAP | LV2 | Audio Unit |
+|---|---|---|---|
+| Linux | `~/.clap/` | `~/.lv2/` | |
+| macOS | `~/Library/Audio/Plug-Ins/CLAP/` | `~/Library/Audio/Plug-Ins/LV2/` | `~/Library/Audio/Plug-Ins/Components/` |
+| Windows | `%COMMONPROGRAMFILES%\CLAP\` | `%APPDATA%\LV2\` | |
+
+**Logic Pro and GarageBand** use the Audio Unit. After copying it, restart
+Logic; it appears under AU Instruments as Keith Adler > hexter. It passes
+Apple's `auval`, the check Logic runs before listing a plugin. The AU is the
+CLAP wrapped by [clap-wrapper](https://github.com/free-audio/clap-wrapper),
+so it has the same five parameters, and Logic saves the bank with the project.
 
 The macOS build is unsigned. If macOS refuses to load it, remove the
 quarantine flag once:
@@ -85,7 +91,8 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-That produces `build/hexter.clap`, `build/hexter.lv2/`, `build/hexter-render`.
+That produces `build/hexter.clap`, `build/lv2/hexter.lv2/`, `build/hexter-render`,
+and on macOS `build/auv2/hexter.component`.
 The CLAP and LV2 headers are fetched by CMake if not installed. On Linux,
 installing `dssi-dev liblo-dev libgtk2.0-dev libasound2-dev` also builds
 the original DSSI plugin and GTK2 editor. Installing `lilv-dev` (or `brew
