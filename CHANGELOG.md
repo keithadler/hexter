@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.1 (2026-09-08)
 
 ### Added
 - Audio Unit (`hexter.component`, macOS) built from the CLAP through
