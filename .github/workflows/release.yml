@@ -65,6 +65,9 @@ jobs:
           cp README.md CHANGELOG.md COPYING AUTHORS $PKG/
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             tar czf $PKG.tar.gz $PKG
+          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+            # Git's bash on the runner has no zip; 7-Zip is preinstalled.
+            7z a -tzip -bd -bso0 $PKG.zip $PKG
           else
             zip -r -q $PKG.zip $PKG
           fi
