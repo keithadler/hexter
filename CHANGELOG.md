@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- A standalone application, `hexter.app` (macOS), `hexter` (Linux) and `hexter.exe`
+  (Windows): the CLAP in a window of its own with audio and MIDI I/O, through clap-wrapper
+  with RtAudio and RtMidi. It opens on the default output, listens on every MIDI input, and
+  has an Audio/MIDI Settings panel. No DAW needed. Asked for on theabolton/hexter#18.
+
+### Changed
+- The Windows release is built with MSVC instead of MinGW, because clap-wrapper's Windows
+  standalone shell is C++/WinRT. The C runtime is linked statically, so the zip still needs
+  nothing installed. MinGW builds keep working (CI checks them) and skip the standalone.
+- The engine's mutex is behind `hexter_mutex.h`: pthreads where they exist, an SRWLOCK on
+  MSVC, which has no pthread.h.
+
 ## 2.0.2 (2026-09-12)
 
 ### Fixed

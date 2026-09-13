@@ -26,7 +26,7 @@
 #ifndef _HEXTER_SYNTH_H
 #define _HEXTER_SYNTH_H
 
-#include <pthread.h>
+#include "hexter_mutex.h"
 
 #include "hexter_types.h"
 #include "hexter.h"
@@ -67,13 +67,13 @@ struct _hexter_instance_t
     unsigned char   last_key;          /* portamento starting key */
     signed char     held_keys[8];      /* for monophonic key tracking, an array of note-ons, most recently received first */
 
-    pthread_mutex_t voicelist_mutex;
+    hexter_mutex_t voicelist_mutex;
     int             voicelist_mutex_grab_failed;
 
     dx7_voice_t    *voice[HEXTER_MAX_POLYPHONY];
 
     /* patches and edit buffer */
-    pthread_mutex_t patches_mutex;
+    hexter_mutex_t patches_mutex;
     int             pending_program_change;
 
     dx7_patch_t    *patches;

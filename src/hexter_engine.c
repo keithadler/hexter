@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
+#include "hexter_mutex.h"
 
 #include "hexter_types.h"
 #include "hexter.h"
@@ -41,19 +41,19 @@
 int
 dssp_voicelist_mutex_lock(hexter_instance_t *instance)
 {
-    return pthread_mutex_lock(&instance->voicelist_mutex);
+    return hexter_mutex_lock(&instance->voicelist_mutex);
 }
 
 int
 dssp_voicelist_mutex_unlock(hexter_instance_t *instance)
 {
-    return pthread_mutex_unlock(&instance->voicelist_mutex);
+    return hexter_mutex_unlock(&instance->voicelist_mutex);
 }
 
 static inline int
 voicelist_trylock(hexter_instance_t *instance)
 {
-    int rc = pthread_mutex_trylock(&instance->voicelist_mutex);
+    int rc = hexter_mutex_trylock(&instance->voicelist_mutex);
     if (rc) {
         instance->voicelist_mutex_grab_failed = 1;
         return rc;
@@ -120,9 +120,9 @@ hexter_engine_new(float sample_rate)
     instance->max_voices = instance->polyphony;
     instance->current_voices = 0;
     instance->last_key = 0;
-    pthread_mutex_init(&instance->voicelist_mutex, NULL);
+    hexter_mutex_init(&instance->voicelist_mutex);
     instance->voicelist_mutex_grab_failed = 0;
-    pthread_mutex_init(&instance->patches_mutex, NULL);
+    hexter_mutex_init(&instance->patches_mutex);
     instance->pending_program_change = -1;
     instance->current_program = 0;
     instance->overlay_program = -1;
@@ -145,8 +145,8 @@ hexter_engine_free(hexter_engine_t *instance)
     if (!instance) return;
     if (instance->patches) {
         hexter_instance_all_voices_off(instance);
-        pthread_mutex_destroy(&instance->voicelist_mutex);
-        pthread_mutex_destroy(&instance->patches_mutex);
+        hexter_mutex_destroy(&instance->voicelist_mutex);
+        hexter_mutex_destroy(&instance->patches_mutex);
         free(instance->patches);
     }
     for (i = 0; i < HEXTER_MAX_POLYPHONY; i++) {
@@ -249,9 +249,9 @@ apply_mono_mode(hexter_instance_t *instance, int mode)
 int
 hexter_engine_set_polyphony(hexter_engine_t *instance, int voices)
 {
-    pthread_mutex_lock(&instance->voicelist_mutex);
+    hexter_mutex_lock(&instance->voicelist_mutex);
     apply_polyphony(instance, voices);
-    pthread_mutex_unlock(&instance->voicelist_mutex);
+    hexter_mutex_unlock(&instance->voicelist_mutex);
     return instance->polyphony;
 }
 
@@ -264,9 +264,9 @@ hexter_engine_get_polyphony(const hexter_engine_t *instance)
 int
 hexter_engine_set_mono_mode(hexter_engine_t *instance, int mode)
 {
-    pthread_mutex_lock(&instance->voicelist_mutex);
+    hexter_mutex_lock(&instance->voicelist_mutex);
     apply_mono_mode(instance, mode);
-    pthread_mutex_unlock(&instance->voicelist_mutex);
+    hexter_mutex_unlock(&instance->voicelist_mutex);
     return instance->monophonic;
 }
 
@@ -295,22 +295,22 @@ hexter_engine_select_program(hexter_engine_t *instance, int program)
 {
     if (program < 0 || program >= 128) return;
 
-    if (pthread_mutex_trylock(&instance->patches_mutex)) {
+    if (hexter_mutex_trylock(&instance->patches_mutex)) {
         instance->pending_program_change = program;
         return;
     }
     hexter_instance_select_program(instance, 0, program);
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
 }
 
 static inline void
 handle_pending_program_change(hexter_instance_t *instance)
 {
-    if (pthread_mutex_trylock(&instance->patches_mutex))
+    if (hexter_mutex_trylock(&instance->patches_mutex))
         return;
     hexter_instance_select_program(instance, 0, instance->pending_program_change);
     instance->pending_program_change = -1;
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
 }
 
 void
@@ -358,10 +358,10 @@ hexter_engine_set_bank(hexter_engine_t *instance, int first_program,
     if (first_program < 0 || first_program >= 128 || count <= 0) return 0;
     if (first_program + count > 128) count = 128 - first_program;
 
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
     memcpy(&instance->patches[first_program], packed, count * DX7_VOICE_SIZE_PACKED);
     refresh_current_patch(instance, first_program, count);
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
     return count;
 }
 
@@ -443,12 +443,12 @@ hexter_engine_init_bank(hexter_engine_t *instance)
 {
     int i;
 
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
     for (i = 0; i < 128; i++)
         memcpy(&instance->patches[i], &dx7_voice_init_voice, DX7_VOICE_SIZE_PACKED);
     instance->overlay_program = -1;
     refresh_current_patch(instance, 0, 128);
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
 }
 
 /* ---- performance data ---- */
@@ -462,10 +462,10 @@ hexter_engine_get_performance(const hexter_engine_t *instance, uint8_t *out64)
 void
 hexter_engine_set_performance(hexter_engine_t *instance, const uint8_t *in64)
 {
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
     memcpy(instance->performance_buffer, in64, DX7_PERFORMANCE_SIZE);
     hexter_instance_set_performance_data(instance);
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
 }
 
 /* ---- edit buffer ---- */
@@ -490,9 +490,9 @@ set_current_patch_locked(hexter_instance_t *instance, const uint8_t *unpacked155
 void
 hexter_engine_set_current_patch(hexter_engine_t *instance, const uint8_t *unpacked155)
 {
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
     set_current_patch_locked(instance, unpacked155);
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
 }
 
 /* caller holds the patches lock (and the voice list lock if voices may be
@@ -541,11 +541,11 @@ set_voice_parameter_locked(hexter_instance_t *instance, int index, int value)
 void
 hexter_engine_set_voice_parameter(hexter_engine_t *instance, int index, int value)
 {
-    pthread_mutex_lock(&instance->voicelist_mutex);
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->voicelist_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
     set_voice_parameter_locked(instance, index, value);
-    pthread_mutex_unlock(&instance->patches_mutex);
-    pthread_mutex_unlock(&instance->voicelist_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->voicelist_mutex);
 }
 
 void
@@ -553,14 +553,14 @@ hexter_engine_store_current_patch(hexter_engine_t *instance, int program)
 {
     if (program < 0 || program >= 128) return;
 
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
     dx7_patch_pack(instance->current_patch_buffer, instance->patches, (uint8_t)program);
     if (instance->overlay_program == program) instance->overlay_program = -1;
     if (instance->current_program == program &&
         instance->overlay_program == -1) {
         /* the bank now matches the edit buffer; nothing else to do */
     }
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
 }
 
 /* ---- sysex, on the audio thread ---- */
@@ -581,19 +581,19 @@ handle_sysex(hexter_instance_t *instance, const uint8_t *d, uint32_t n)
         if (n == 163 && d[3] == 0x00 && d[4] == 0x01 && d[5] == 0x1B) {
             /* single voice: 155 bytes of unpacked voice data */
             if (dx7_bulk_dump_checksum(d + 6, 155) != d[161]) return;
-            if (pthread_mutex_trylock(&instance->patches_mutex)) return;
+            if (hexter_mutex_trylock(&instance->patches_mutex)) return;
             set_current_patch_locked(instance, d + 6);
-            pthread_mutex_unlock(&instance->patches_mutex);
+            hexter_mutex_unlock(&instance->patches_mutex);
 
         } else if (n == 4104 && d[3] == 0x09 && d[4] == 0x20 && d[5] == 0x00) {
             /* 32 voice bulk dump */
             if (dx7_bulk_dump_checksum(d + 6, 4096) != d[4102]) return;
-            if (pthread_mutex_trylock(&instance->patches_mutex)) return;
+            if (hexter_mutex_trylock(&instance->patches_mutex)) return;
             memcpy(instance->patches, d + 6, 4096);
             if (instance->overlay_program >= 0 && instance->overlay_program < 32)
                 instance->overlay_program = -1;
             refresh_current_patch(instance, 0, 32);
-            pthread_mutex_unlock(&instance->patches_mutex);
+            hexter_mutex_unlock(&instance->patches_mutex);
         }
 
     } else if ((d[2] & 0xF0) == 0x10 && n == 7) {
@@ -603,9 +603,9 @@ handle_sysex(hexter_instance_t *instance, const uint8_t *d, uint32_t n)
         int value = d[5] & 0x7F;
 
         if (group == 0) {
-            if (pthread_mutex_trylock(&instance->patches_mutex)) return;
+            if (hexter_mutex_trylock(&instance->patches_mutex)) return;
             set_voice_parameter_locked(instance, param, value);
-            pthread_mutex_unlock(&instance->patches_mutex);
+            hexter_mutex_unlock(&instance->patches_mutex);
         } else if (group == 2) {
             uint8_t *perf = instance->performance_buffer;
             int slot = -1;
@@ -623,11 +623,11 @@ handle_sysex(hexter_instance_t *instance, const uint8_t *d, uint32_t n)
               case 77: slot = 14; value = clampi(value, 0, 7);  break;  /* aftertouch assign */
               default: return;
             }
-            if (pthread_mutex_trylock(&instance->patches_mutex)) return;
+            if (hexter_mutex_trylock(&instance->patches_mutex)) return;
             perf[0] &= ~0x01;  /* leave 0.5.9 compatibility mode */
             perf[slot] = (uint8_t)value;
             hexter_instance_set_performance_data(instance);
-            pthread_mutex_unlock(&instance->patches_mutex);
+            hexter_mutex_unlock(&instance->patches_mutex);
         }
     }
 }
@@ -845,8 +845,8 @@ hexter_engine_state_load(hexter_engine_t *instance, const uint8_t *buf, size_t s
     if (program < 0 || program >= 128) program = 0;
     if (overlay < -1 || overlay >= 128) overlay = -1;
 
-    pthread_mutex_lock(&instance->voicelist_mutex);
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->voicelist_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
 
     hexter_instance_all_voices_off(instance);
     memcpy(instance->patches, buf + 12, 128 * DX7_VOICE_SIZE_PACKED);
@@ -864,7 +864,7 @@ hexter_engine_state_load(hexter_engine_t *instance, const uint8_t *buf, size_t s
     apply_polyphony(instance, (int)get_u32(buf + 16788));
     apply_mono_mode(instance, (int)get_u32(buf + 16792));
 
-    pthread_mutex_unlock(&instance->patches_mutex);
-    pthread_mutex_unlock(&instance->voicelist_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->voicelist_mutex);
     return 1;
 }

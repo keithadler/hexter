@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
+#include "hexter_mutex.h"
 
 #include "hexter.h"
 #include "hexter_types.h"
@@ -469,12 +469,12 @@ hexter_instance_update_op_param(hexter_instance_t *instance, int opnum,
     }
 
     /* update edit buffer */
-    if (!pthread_mutex_trylock(&instance->patches_mutex)) {
+    if (!hexter_mutex_trylock(&instance->patches_mutex)) {
 
         instance->current_patch_buffer[((5 - opnum) * 21) + param] =
             value;
 
-        pthread_mutex_unlock(&instance->patches_mutex);
+        hexter_mutex_unlock(&instance->patches_mutex);
     } else {
         /* In the unlikely event that we get here, it means another thread is
          * currently updating the current patch buffer. We could do something
@@ -893,11 +893,11 @@ hexter_instance_handle_patches(hexter_instance_t *instance, const char *key,
     if (section < 0 || section > 3)
         return dssp_error_message("patch configuration failed: invalid section '%c'", key[7]);
 
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
 
     if (!decode_7in6(value, 32 * sizeof(dx7_patch_t),
                      (uint8_t *)&instance->patches[section * 32])) {
-        pthread_mutex_unlock(&instance->patches_mutex);
+        hexter_mutex_unlock(&instance->patches_mutex);
         return dssp_error_message("patch configuration failed: corrupt data");
     }
 
@@ -906,7 +906,7 @@ hexter_instance_handle_patches(hexter_instance_t *instance, const char *key,
         dx7_patch_unpack(instance->patches, instance->current_program,
                          instance->current_patch_buffer);
 
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
 
     return NULL; /* success */
 }
@@ -923,7 +923,7 @@ hexter_instance_handle_edit_buffer(hexter_instance_t *instance,
         uint8_t buffer[DX7_VOICE_SIZE_UNPACKED];
     } edit_buffer;
 
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
 
     if (!strcmp(value, "off")) {
 
@@ -938,7 +938,7 @@ hexter_instance_handle_edit_buffer(hexter_instance_t *instance,
         DEBUG_MESSAGE(DB_DATA, " hexter_instance_handle_edit_buffer: received new overlay\n");
 
         if (!decode_7in6(value, sizeof(edit_buffer), (uint8_t *)&edit_buffer)) {
-            pthread_mutex_unlock(&instance->patches_mutex);
+            hexter_mutex_unlock(&instance->patches_mutex);
             return dssp_error_message("patch edit failed: corrupt data");
         }
 
@@ -949,7 +949,7 @@ hexter_instance_handle_edit_buffer(hexter_instance_t *instance,
         }
     }
 
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
 
     return NULL; /* success */
 }
@@ -958,18 +958,18 @@ char *
 hexter_instance_handle_performance(hexter_instance_t *instance,
                                    const char *value)
 {
-    pthread_mutex_lock(&instance->patches_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
 
     DEBUG_MESSAGE(DB_DATA, " hexter_instance_handle_performance: received new global performance parameters\n");
 
     if (!decode_7in6(value, DX7_PERFORMANCE_SIZE, instance->performance_buffer)) {
-        pthread_mutex_unlock(&instance->patches_mutex);
+        hexter_mutex_unlock(&instance->patches_mutex);
         return dssp_error_message("performance edit failed: corrupt data");
     }
 
     hexter_instance_set_performance_data(instance);
 
-    pthread_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->patches_mutex);
 
     /* we eventually may want to update playing voices here */
 

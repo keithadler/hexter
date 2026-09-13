@@ -22,11 +22,17 @@ editor still build on Linux when their libraries are installed.
 Builds for every platform are attached to each
 [release](https://github.com/keithadler/hexter/releases). Unzip and copy:
 
-| Platform | CLAP | LV2 | Audio Unit |
-|---|---|---|---|
-| Linux | `~/.clap/` | `~/.lv2/` | |
-| macOS | `~/Library/Audio/Plug-Ins/CLAP/` | `~/Library/Audio/Plug-Ins/LV2/` | `~/Library/Audio/Plug-Ins/Components/` |
-| Windows | `%COMMONPROGRAMFILES%\CLAP\` | `%APPDATA%\LV2\` | |
+| Platform | CLAP | LV2 | Audio Unit | Standalone |
+|---|---|---|---|---|
+| Linux | `~/.clap/` | `~/.lv2/` | | `hexter`, run it |
+| macOS | `~/Library/Audio/Plug-Ins/CLAP/` | `~/Library/Audio/Plug-Ins/LV2/` | `~/Library/Audio/Plug-Ins/Components/` | `hexter.app`, anywhere |
+| Windows | `%COMMONPROGRAMFILES%\CLAP\` | `%APPDATA%\LV2\` | | `hexter.exe`, anywhere |
+
+**No DAW?** The standalone is hexter in a window of its own. It opens on the default audio
+output, listens on every MIDI input it finds, and has an *Audio/MIDI Settings* panel for the
+output device and sample rate. Plug in a keyboard and play. It has no editor, so choose voices
+with MIDI program change, and load a bank by sending a DX7 bulk dump or by setting
+`HEXTER_DEFAULT_BANK` before starting it (see below).
 
 **Logic Pro and GarageBand** use the Audio Unit. After copying it, restart
 Logic; it appears under AU Instruments as Keith Adler > hexter. It passes
@@ -91,7 +97,12 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
+On Windows, build with MSVC (the Visual Studio Build Tools) and `-G Ninja` to get the
+standalone; clap-wrapper's Windows shell is C++/WinRT, which MinGW cannot compile. A MinGW
+build still produces the plugins and the tool.
+
 That produces `build/hexter.clap`, `build/lv2/hexter.lv2/`, `build/hexter-render`,
+the standalone in `build/wrapped/`,
 and on macOS `build/auv2/hexter.component`.
 The CLAP and LV2 headers are fetched by CMake if not installed. On Linux,
 installing `dssi-dev liblo-dev libgtk2.0-dev libasound2-dev` also builds

@@ -6,11 +6,16 @@ project(hexter
     HOMEPAGE_URL "https://github.com/keithadler/hexter"
     LANGUAGES C)
 
+# With MSVC, link the C runtime statically: a user's machine need not have the Visual C++
+# redistributable, just as the MinGW build must not need libwinpthread-1.dll.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 option(HEXTER_BUILD_CLAP  "Build the CLAP plugin" ON)
 option(HEXTER_BUILD_LV2   "Build the LV2 plugin" ON)
 option(HEXTER_BUILD_DSSI  "Build the legacy DSSI plugin and GTK2 editor when their libraries are installed" ON)
 option(HEXTER_BUILD_TOOLS "Build the hexter-render command line tool" ON)
 option(HEXTER_BUILD_AUV2  "Build an Audio Unit (macOS) from the CLAP through clap-wrapper" ON)
+option(HEXTER_BUILD_STANDALONE "Build a standalone application from the CLAP through clap-wrapper" ON)
 option(HEXTER_BUILD_TESTS "Build the tests" ON)
 option(HEXTER_FLOATING_POINT "Render in floating point instead of the default fixed point" OFF)
 
@@ -108,15 +113,36 @@ if(HEXTER_BUILD_CLAP)
     endif()
 endif()
 
-# ---- Audio Unit v2, for Logic and GarageBand (macOS) ----
-# clap-wrapper links the CLAP statically into an AUv2 component and fetches
-# Apple's AudioUnitSDK itself.
+# ---- clap-wrapper: the Audio Unit (macOS) and the standalone application ----
+# clap-wrapper links the CLAP statically into an AUv2 component and into a small standalone
+# host with its own audio and MIDI I/O (RtAudio and RtMidi); it fetches those and Apple's
+# AudioUnitSDK itself. Its Windows standalone shell is C++/WinRT, so on Windows the standalone
+# needs MSVC or clang: a MinGW build skips it and still produces the plugins and the tool.
 
-if(APPLE AND HEXTER_BUILD_CLAP AND HEXTER_BUILD_AUV2)
-    enable_language(CXX OBJC OBJCXX)
+set(HEXTER_WRAP_AUV2 OFF)
+set(HEXTER_WRAP_STANDALONE OFF)
+if(HEXTER_BUILD_CLAP)
+    if(APPLE AND HEXTER_BUILD_AUV2)
+        set(HEXTER_WRAP_AUV2 ON)
+    endif()
+    if(HEXTER_BUILD_STANDALONE)
+        if(WIN32 AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+            message(STATUS "hexter: standalone skipped, clap-wrapper's Windows standalone needs MSVC or clang")
+        else()
+            set(HEXTER_WRAP_STANDALONE ON)
+        endif()
+    endif()
+endif()
+
+if(HEXTER_WRAP_AUV2 OR HEXTER_WRAP_STANDALONE)
+    enable_language(CXX)
+    if(APPLE)
+        enable_language(OBJC OBJCXX)
+    endif()
     set(CMAKE_CXX_STANDARD 17)
     set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES ON CACHE BOOL "" FORCE)
-    set(CLAP_WRAPPER_BUILD_AUV2 ON CACHE BOOL "" FORCE)
+    set(CLAP_WRAPPER_BUILD_AUV2 ${HEXTER_WRAP_AUV2} CACHE BOOL "" FORCE)
+    set(CLAP_WRAPPER_BUILD_STANDALONE ${HEXTER_WRAP_STANDALONE} CACHE BOOL "" FORCE)
     FetchContent_Declare(clap-wrapper
         GIT_REPOSITORY https://github.com/free-audio/clap-wrapper.git
         GIT_TAG        v0.16.0
@@ -129,16 +155,29 @@ if(APPLE AND HEXTER_BUILD_CLAP AND HEXTER_BUILD_AUV2)
     target_compile_definitions(hexter_clap_impl PRIVATE HEXTER_CLAP_NO_ENTRY=1)
     target_compile_options(hexter_clap_impl PRIVATE ${HEXTER_C_FLAGS})
 
+    set(HEXTER_WRAP_FORMATS CLAP)
+    if(HEXTER_WRAP_AUV2)
+        list(APPEND HEXTER_WRAP_FORMATS AUV2)
+    endif()
+    set(HEXTER_WRAP_STANDALONE_ARGS)
+    if(HEXTER_WRAP_STANDALONE)
+        # target postfix, output name, CLAP id
+        set(HEXTER_WRAP_STANDALONE_ARGS STANDALONE_CONFIGURATIONS standalone hexter com.github.keithadler.hexter)
+    endif()
+
+    # Outputs land in build/wrapped: hexter.component (macOS), and the standalone as hexter.app
+    # (macOS), hexter (Linux) or Standalone-hexter_wrapped_standalone/hexter.exe (Windows).
     make_clapfirst_plugins(
-        TARGET_NAME hexter_au
+        TARGET_NAME hexter_wrapped
         IMPL_TARGET hexter_clap_impl
         OUTPUT_NAME "hexter"
         ENTRY_SOURCE "plugins/clap/hexter_clap_entry.cpp"
         BUNDLE_IDENTIFIER "com.github.keithadler.hexter.au"
         BUNDLE_VERSION ${PROJECT_VERSION}
         COPY_AFTER_BUILD FALSE
-        PLUGIN_FORMATS CLAP AUV2
-        ASSET_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/auv2
+        PLUGIN_FORMATS ${HEXTER_WRAP_FORMATS}
+        ${HEXTER_WRAP_STANDALONE_ARGS}
+        ASSET_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/wrapped
         AUV2_MANUFACTURER_NAME "Keith Adler"
         AUV2_MANUFACTURER_CODE "KAdl"
         AUV2_SUBTYPE_CODE "Hxtr"
