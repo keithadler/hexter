@@ -65,6 +65,12 @@ target_compile_definitions(hexter_engine PUBLIC
     $<$<BOOL:${HEXTER_FLOATING_POINT}>:HEXTER_USE_FLOATING_POINT=1>)
 target_compile_options(hexter_engine PRIVATE ${HEXTER_C_FLAGS})
 target_link_libraries(hexter_engine PUBLIC Threads::Threads)
+if(MINGW)
+    # MinGW's pthreads come from libwinpthread-1.dll, which a Windows machine only has when MinGW is
+    # installed. Every plugin and tool takes the engine, so link the runtime into each binary here and
+    # the shipped zip stands on its own (2.0.0 and 2.0.1 failed with "libwinpthread-1.dll was not found").
+    target_link_options(hexter_engine PUBLIC -static)
+endif()
 if(NOT MSVC)
     target_link_libraries(hexter_engine PUBLIC m)
 endif()
