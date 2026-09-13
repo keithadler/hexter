@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.1.0 (2026-09-13)
 
 ### Added
 - A standalone application, `hexter.app` (macOS), `hexter` (Linux) and `hexter.exe`
