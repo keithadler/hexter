@@ -45,9 +45,9 @@
 
 #include <stdio.h>
 #define DSSP_DEBUG_INIT(x)
-#define DEBUG_MESSAGE(type, fmt...) { if (DSSP_DEBUG & type) fprintf(stderr, "hexter.so" fmt); }
-#define GUIDB_MESSAGE(type, fmt...) { if (DSSP_DEBUG & type) fprintf(stderr, "hexter_gtk" fmt); }
-#define TUIDB_MESSAGE(type, fmt...) { if (DSSP_DEBUG & type) printf("hexter_text" fmt); }
+#define DEBUG_MESSAGE(type, ...) { if (DSSP_DEBUG & type) fprintf(stderr, "hexter.so" __VA_ARGS__); }
+#define GUIDB_MESSAGE(type, ...) { if (DSSP_DEBUG & type) fprintf(stderr, "hexter_gtk" __VA_ARGS__); }
+#define TUIDB_MESSAGE(type, ...) { if (DSSP_DEBUG & type) printf("hexter_text" __VA_ARGS__); }
 // -FIX-:
 // #include "message_buffer.h"
 // #define DSSP_DEBUG_INIT(x)  mb_init(x)
@@ -61,9 +61,9 @@
 
 #else  /* !DSSP_DEBUG */
 
-#define DEBUG_MESSAGE(type, fmt...)
-#define GUIDB_MESSAGE(type, fmt...)
-#define TUIDB_MESSAGE(type, fmt...)
+#define DEBUG_MESSAGE(type, ...)
+#define GUIDB_MESSAGE(type, ...)
+#define TUIDB_MESSAGE(type, ...)
 #define DSSP_DEBUG_INIT(x)
 
 #endif  /* DSSP_DEBUG */
