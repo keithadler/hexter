@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.2 (2026-09-12)
 
 ### Fixed
 - Windows: the CLAP, the LV2 plugin and `hexter-render.exe` in the 2.0.0 and 2.0.1 zips needed
