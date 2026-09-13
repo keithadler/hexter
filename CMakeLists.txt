@@ -139,7 +139,13 @@ if(HEXTER_WRAP_AUV2 OR HEXTER_WRAP_STANDALONE)
     if(APPLE)
         enable_language(OBJC OBJCXX)
     endif()
-    set(CMAKE_CXX_STANDARD 17)
+    if(MSVC)
+        # C++/WinRT under C++17 includes <experimental/coroutine>, which the current MSVC STL
+        # rejects outright; with C++20 it uses <coroutine>. clap-wrapper takes the standard from here.
+        set(CMAKE_CXX_STANDARD 20)
+    else()
+        set(CMAKE_CXX_STANDARD 17)
+    endif()
     set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES ON CACHE BOOL "" FORCE)
     set(CLAP_WRAPPER_BUILD_AUV2 ${HEXTER_WRAP_AUV2} CACHE BOOL "" FORCE)
     set(CLAP_WRAPPER_BUILD_STANDALONE ${HEXTER_WRAP_STANDALONE} CACHE BOOL "" FORCE)
@@ -260,6 +266,17 @@ if(HEXTER_BUILD_DSSI)
         install(TARGETS hexter_gtk RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/dssi/hexter)
         message(STATUS "hexter: building the legacy GTK2 editor")
     endif()
+endif()
+
+if(WIN32)
+    # Three DLLs are all called hexter (the CLAP, the LV2 and clap-wrapper's CLAP). MSVC writes an
+    # import library and .exp next to each, so give each its own directory or they overwrite one
+    # another and the link fails on a file another target is writing.
+    foreach(t hexter_clap hexter_lv2 hexter_wrapped_clap)
+        if(TARGET ${t})
+            set_target_properties(${t} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/implib/${t})
+        endif()
+    endforeach()
 endif()
 
 # ---- command line renderer ----

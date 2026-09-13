@@ -41,7 +41,7 @@
  *
  * turn off a voice immediately
  */
-inline void
+void
 dx7_voice_off(dx7_voice_t* voice)
 {
     voice->status = DX7_VOICE_OFF;
@@ -53,7 +53,7 @@ dx7_voice_off(dx7_voice_t* voice)
 /*
  * dx7_voice_start_voice
  */
-inline void
+void
 dx7_voice_start_voice(dx7_voice_t *voice)
 {
     voice->status = DX7_VOICE_ON;
@@ -319,7 +319,7 @@ hexter_instance_note_on(hexter_instance_t *instance, unsigned char key,
 /*
  * hexter_instance_key_pressure
  */
-inline void
+void
 hexter_instance_key_pressure(hexter_instance_t *instance, unsigned char key,
                              unsigned char pressure)
 {
