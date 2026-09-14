@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- The standalone stopped at startup with "Unable to configure audio: RtApi::getDeviceInfo:
+  deviceId argument not found" on a Windows machine (reported by Reaper10 on
+  theabolton/hexter#18). RtAudio had answered 0 for the default output, which happens when the
+  default endpoint fails its probe or there is no capture device, and clap-wrapper asked for
+  device 0. A patch applied to clap-wrapper at build time (`cmake/`) now falls back to the
+  first device with outputs, and keeps the window and MIDI up without sound when there is
+  none, so a device can be chosen in Audio/MIDI Settings. DirectSound is compiled in beside
+  WASAPI as a second API to choose from.
+
 ## 2.1.0 (2026-09-13)
 
 ### Added
