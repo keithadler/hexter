@@ -13,7 +13,7 @@ editor still build on Linux when their libraries are installed.
 |---|---|
 | Plugins | CLAP (`hexter.clap`), LV2 (`hexter.lv2`), Audio Unit (`hexter.component`, macOS), DSSI (legacy, Linux) |
 | Standalone | `hexter.app` (macOS), `hexter` (Linux), `hexter.exe` (Windows): its own window, audio and MIDI, no host needed |
-| Platforms | Linux, macOS (Apple silicon and Intel), Windows |
+| Platforms | Linux (x86_64 and arm64), macOS (Apple silicon and Intel), Windows (x64 and arm64) |
 | Banks | `.syx`, `.dx7`, `.mid` (sysex inside a MIDI file), `.tx7`, `.snd`, `.bnk`, `.dx2`, raw packed voices |
 | Sysex | DX7 single voice, 32-voice bulk dump, voice and function parameter changes |
 | License | GPL-2.0-or-later |
