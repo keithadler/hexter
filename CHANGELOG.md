@@ -8,13 +8,12 @@
   plugin with no GUI, with the settings hidden in the system menu behind the icon. The window
   now has a body that says the synth is running and where the menu is. The README says so too.
 
-## Unreleased
-
 ### Added
 - Android: Bluetooth MIDI keyboards. A **Bluetooth MIDI** button scans for keyboards that
   advertise the BLE MIDI service, connects the one you pick through Android's MIDI service,
   and from then on it is an input like a USB keyboard. Android 12 and newer ask for the
   Bluetooth permission; older versions ask for location, which is how they gate the scan.
+  Verified on the emulator up to the scan dialog; not yet tried against a real keyboard.
 
 ## 2.2.1 (2026-09-17)
 
