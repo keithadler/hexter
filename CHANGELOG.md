@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.2.0 (2026-09-17)
 
 ### Added
 - An Android app: the engine behind an Oboe low-latency stream, USB MIDI in through Android's
