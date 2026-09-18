@@ -124,3 +124,15 @@ jobs:
           name: hexter-Android
           path: android/app/build/outputs/apk/debug/*.apk
 
+  ios:
+    name: iOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for the simulator and for a device (unsigned; nothing to distribute)
+        run: |
+          xcodebuild -project ios/Hexter.xcodeproj -scheme Hexter -configuration Release \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -project ios/Hexter.xcodeproj -scheme Hexter -configuration Release \
+            -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
+

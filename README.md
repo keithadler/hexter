@@ -14,7 +14,8 @@ editor still build on Linux when their libraries are installed.
 | Plugins | CLAP (`hexter.clap`), LV2 (`hexter.lv2`), Audio Unit (`hexter.component`, macOS), DSSI (legacy, Linux) |
 | Standalone | `hexter.app` (macOS), `hexter` (Linux), `hexter.exe` (Windows): its own window, audio and MIDI, no host needed |
 | Android | `hexter-<version>-android.apk`: a phone or tablet app with the same engine, USB MIDI in, and an on-screen keyboard |
-| Platforms | Linux (x86_64 and arm64), macOS (Apple silicon and Intel), Windows (x64 and arm64), Android (8.0 or newer, 64-bit) |
+| iPhone and iPad | the same app for iOS, in `ios/`; Apple does not allow a download, so you build it yourself with Xcode (see below) |
+| Platforms | Linux (x86_64 and arm64), macOS (Apple silicon and Intel), Windows (x64 and arm64), Android (8.0 or newer, 64-bit), iOS (16 or newer, built with Xcode) |
 | Banks | `.syx`, `.dx7`, `.mid` (sysex inside a MIDI file), `.tx7`, `.snd`, `.bnk`, `.dx2`, raw packed voices |
 | Sysex | DX7 single voice, 32-voice bulk dump, voice and function parameter changes |
 | License | GPL-2.0-or-later |
@@ -88,6 +89,53 @@ app, so nothing is lost.
 
 **What it needs.** Android 8.0 or newer on a 64-bit device, which is every phone sold in the
 last several years. Bluetooth MIDI is not supported yet; USB is.
+
+## iPhone and iPad
+
+hexter runs on an iPhone or iPad with the same screen as the Android app: the voices of a
+bank, volume, a level meter, a two-octave keyboard on the glass, and any MIDI keyboard over
+USB or Bluetooth. There is no download for it. Apple does not let an iPhone install an app
+from a file the way Android does; every app must be signed through Apple. The free way is
+to build it yourself with Xcode on a Mac, which takes about twenty minutes the first time
+and needs nothing but an Apple ID. These steps assume you have never opened Xcode.
+
+1. **Install Xcode** from the Mac App Store. It is free and large. Open it once, let it
+   finish installing its components, and when it asks which platforms to add, include iOS.
+2. **Get the code.** On this page, click the green **Code** button, then **Download ZIP**,
+   and unzip it. (If you know git, `git clone` works too.)
+3. **Open the project.** In the unzipped folder, open `ios/Hexter.xcodeproj` by
+   double-clicking it. Xcode opens with the project on the left.
+4. **Sign in with your Apple ID.** In the Xcode menu choose **Settings**, then
+   **Accounts**, click **+**, pick **Apple ID**, and sign in. Any Apple ID works. You do not
+   need the paid developer program.
+5. **Pick yourself as the team.** Click **Hexter** at the very top of the file list on the
+   left, select the **Hexter** target, open the **Signing & Capabilities** tab, and under
+   **Team** choose your name, shown as *(Personal Team)*. If Xcode says the bundle
+   identifier is already in use, change `org.keithadler.hexter` on that tab to anything
+   with your own name in it, such as `com.yourname.hexter`.
+6. **Turn on Developer Mode on the phone.** On the iPhone, open **Settings**, then
+   **Privacy & Security**, scroll to **Developer Mode**, turn it on, and restart when asked.
+   (iOS 16 or newer. Older versions skip this step.)
+7. **Plug the phone into the Mac** with a cable and unlock it. If the phone asks whether to
+   trust this computer, tap **Trust**. In Xcode's toolbar, click the device name next to
+   "Hexter" and choose your iPhone from the list.
+8. **Press Run**, the ▶ button at the top left (or ⌘R). Xcode builds the app and copies it
+   to the phone. The first time, the phone refuses to open it: on the phone go to
+   **Settings**, **General**, **VPN & Device Management**, tap your Apple ID under
+   *Developer App*, and tap **Trust**. Then tap the hexter icon on the home screen.
+
+**The catch.** An app signed with a free Apple ID stops opening after 7 days. Plug the phone
+in and press Run again, and it works for another 7. A paid developer account ($99 a year)
+extends that to a year. Nothing else is different.
+
+**No iPhone at hand?** Choose an iPhone simulator instead of your phone in step 7. The app
+runs on the Mac's screen and plays through the Mac's speakers. The simulator does not pass
+MIDI keyboards through, so use the keyboard on the screen.
+
+**What it needs.** iOS 16 or newer. USB MIDI keyboards plug in through a Lightning or USB-C
+adapter, no driver needed. For a Bluetooth MIDI keyboard, tap **Bluetooth MIDI** in the app
+and pick it. To load your own banks, tap **Open bank…** and pick any `.dx7` or `.syx` file
+from Files, or drop files into the hexter folder in Files under *On My iPhone*.
 
 ## Using it
 

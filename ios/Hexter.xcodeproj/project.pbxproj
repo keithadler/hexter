@@ -1,0 +1,473 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0129FB87399D4E6034FA52F2 /* tx7_roms.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = E0382FCB2AE1B2FFB5C061B6 /* tx7_roms.dx7 */; };
+		27929F441C8516D29300C642 /* dx7_voice_tables.c in Sources */ = {isa = PBXBuildFile; fileRef = FBD01985162C49A2B685012A /* dx7_voice_tables.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
+		45285EF1F6F949C2202F52EF /* HexterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F27EB0A2BAA7A09B9AA1273B /* HexterApp.swift */; };
+		4D5EDEE02DD22278D60716ED /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF7F78E4841C5774C3717E62 /* Assets.xcassets */; };
+		5249B7A7010DF8AAC3223575 /* dx7_bank.c in Sources */ = {isa = PBXBuildFile; fileRef = 153C925540EA071FE51C9FFB /* dx7_bank.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
+		5879C833A0AC1E3B672EDDF5 /* dx7_voice.c in Sources */ = {isa = PBXBuildFile; fileRef = E5F09903F79E1C19658E37B6 /* dx7_voice.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
+		7852E5E32B056774E21A048E /* KeyboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C5599CB79BD5612069CC8D7 /* KeyboardView.swift */; };
+		82C35BFE405ED39056491B94 /* dx7_voice_render.c in Sources */ = {isa = PBXBuildFile; fileRef = 72EAD61194614A2BCABA9749 /* dx7_voice_render.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
+		972DD0E1852A1F4375F93B03 /* fb01_roms_converted_34.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = BA51CC94CEFD489772D849B1 /* fb01_roms_converted_34.dx7 */; };
+		9A513D82FB616EC8582E3226 /* dx7_voice_data.c in Sources */ = {isa = PBXBuildFile; fileRef = 197509265D223ED370CF1B4F /* dx7_voice_data.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
+		9FFE08841F7229F578C01DEE /* MIDIInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30257175514F0BC0A306BE3B /* MIDIInput.swift */; };
+		A0ADDF3105F0916B1E4C1650 /* fb01_roms_converted_5.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = F395B4CEAB8AB779D61A1402 /* fb01_roms_converted_5.dx7 */; };
+		A637F96DF5E66C27E540A239 /* hexter_synth.c in Sources */ = {isa = PBXBuildFile; fileRef = 2E836EBA05271B5370BEEDC7 /* hexter_synth.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
+		C361000453CAF4D4A78C1107 /* dx7_roms.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = 39A0788F2BF7BA5B61FF520C /* dx7_roms.dx7 */; };
+		CA455C22A8B664B01018E6D9 /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE675FA51D4E1E383653EE4C /* Engine.swift */; };
+		CE4A14134525B4CE55B32897 /* default_patches.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = 30187A0D97C6225077E84E89 /* default_patches.dx7 */; };
+		D05F14CA1759FE9BBF519792 /* fb01_roms_converted_12.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = AD05C2606F1B708D29E0AE26 /* fb01_roms_converted_12.dx7 */; };
+		D5CACCB9AC408D5B8614BDAB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938839CE26E2490B9C6BD2E2 /* ContentView.swift */; };
+		E598180FE637C90F0BC1674D /* dx7_voice_patches.c in Sources */ = {isa = PBXBuildFile; fileRef = 991EEEA5F9F39E1B822D9EC3 /* dx7_voice_patches.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
+		F0D652D27C7DF487477E7344 /* hexter_engine.c in Sources */ = {isa = PBXBuildFile; fileRef = 8E1D6ECD6DFE70F3297BA0CE /* hexter_engine.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
+		FA9803059FF32E38EE1A4732 /* hexter_bridge.c in Sources */ = {isa = PBXBuildFile; fileRef = 5F1E4960C17C97169FD173EB /* hexter_bridge.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0067340DE83F8E93F89192F5 /* hexter_mutex.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_mutex.h; sourceTree = "<group>"; };
+		0EA6CD95DAFE0964B5C9B502 /* dx7_voice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_voice.h; sourceTree = "<group>"; };
+		153C925540EA071FE51C9FFB /* dx7_bank.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_bank.c; sourceTree = "<group>"; };
+		197509265D223ED370CF1B4F /* dx7_voice_data.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_data.c; sourceTree = "<group>"; };
+		19E5B5EDB85428D18D90B9D9 /* hexter_engine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_engine.h; sourceTree = "<group>"; };
+		20E78208485B633DBD4CF73E /* gui_interface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_interface.h; sourceTree = "<group>"; };
+		2E836EBA05271B5370BEEDC7 /* hexter_synth.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hexter_synth.c; sourceTree = "<group>"; };
+		30187A0D97C6225077E84E89 /* default_patches.dx7 */ = {isa = PBXFileReference; path = default_patches.dx7; sourceTree = "<group>"; };
+		30257175514F0BC0A306BE3B /* MIDIInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIInput.swift; sourceTree = "<group>"; };
+		335F1CDBDFFD16C0443EB52C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		36C45901CE810BC0E96DEFE2 /* gui_callbacks.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_callbacks.h; sourceTree = "<group>"; };
+		39A0788F2BF7BA5B61FF520C /* dx7_roms.dx7 */ = {isa = PBXFileReference; path = dx7_roms.dx7; sourceTree = "<group>"; };
+		3DFA85C7026B70A91DC9ADEE /* gui_data.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_data.h; sourceTree = "<group>"; };
+		409100CCFBAB002832D6071E /* dx7_voice_data.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_voice_data.h; sourceTree = "<group>"; };
+		5ACF1EB18179527B1A509A38 /* gui_patch_edit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_patch_edit.h; sourceTree = "<group>"; };
+		5F1E4960C17C97169FD173EB /* hexter_bridge.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hexter_bridge.c; sourceTree = "<group>"; };
+		72EAD61194614A2BCABA9749 /* dx7_voice_render.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_render.c; sourceTree = "<group>"; };
+		80233C03DA12C37DE2A1B8E5 /* hexter_bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_bridge.h; sourceTree = "<group>"; };
+		809BF7567C08DBA101E288BE /* gui_main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_main.h; sourceTree = "<group>"; };
+		8E1D6ECD6DFE70F3297BA0CE /* hexter_engine.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hexter_engine.c; sourceTree = "<group>"; };
+		938839CE26E2490B9C6BD2E2 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		991EEEA5F9F39E1B822D9EC3 /* dx7_voice_patches.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_patches.c; sourceTree = "<group>"; };
+		9BE8E1079AE2759A52697011 /* hexter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter.h; sourceTree = "<group>"; };
+		9C4629BC6AAE41DCAF9EA7FB /* gui_midi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_midi.h; sourceTree = "<group>"; };
+		9C5599CB79BD5612069CC8D7 /* KeyboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardView.swift; sourceTree = "<group>"; };
+		A7BD9539A5649F5859D4ADD5 /* hexter_types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_types.h; sourceTree = "<group>"; };
+		AB24215B8EBF788D1DE0A0CB /* Hexter-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Hexter-Bridging-Header.h"; sourceTree = "<group>"; };
+		AD05C2606F1B708D29E0AE26 /* fb01_roms_converted_12.dx7 */ = {isa = PBXFileReference; path = fb01_roms_converted_12.dx7; sourceTree = "<group>"; };
+		BA51CC94CEFD489772D849B1 /* fb01_roms_converted_34.dx7 */ = {isa = PBXFileReference; path = fb01_roms_converted_34.dx7; sourceTree = "<group>"; };
+		BF7F78E4841C5774C3717E62 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CE675FA51D4E1E383653EE4C /* Engine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Engine.swift; sourceTree = "<group>"; };
+		D684236CE4B1A311A639785C /* dx7_bank.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_bank.h; sourceTree = "<group>"; };
+		DD7AF2F1C366EF422AA61691 /* Hexter.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Hexter.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E0382FCB2AE1B2FFB5C061B6 /* tx7_roms.dx7 */ = {isa = PBXFileReference; path = tx7_roms.dx7; sourceTree = "<group>"; };
+		E3C6BF2B07ADCCE08CEBD40C /* gui_images.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_images.h; sourceTree = "<group>"; };
+		E5F09903F79E1C19658E37B6 /* dx7_voice.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice.c; sourceTree = "<group>"; };
+		F27EB0A2BAA7A09B9AA1273B /* HexterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HexterApp.swift; sourceTree = "<group>"; };
+		F395B4CEAB8AB779D61A1402 /* fb01_roms_converted_5.dx7 */ = {isa = PBXFileReference; path = fb01_roms_converted_5.dx7; sourceTree = "<group>"; };
+		F4F38DAFC7F226152F6F0D43 /* gui_retro_console.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_retro_console.h; sourceTree = "<group>"; };
+		FA60993D8A22D1A61AED9AB7 /* hexter_synth.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_synth.h; sourceTree = "<group>"; };
+		FBD01985162C49A2B685012A /* dx7_voice_tables.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_tables.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		311A87AA62CECB7D8B9362A9 = {
+			isa = PBXGroup;
+			children = (
+				8832082C01AE3207F5337C3D /* Hexter */,
+				780F5E617B257EDC3CEC7E4A /* hexter */,
+				C6419D2954AD94636B6686B0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4677A68A6127699BC63EB0BA /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				153C925540EA071FE51C9FFB /* dx7_bank.c */,
+				D684236CE4B1A311A639785C /* dx7_bank.h */,
+				197509265D223ED370CF1B4F /* dx7_voice_data.c */,
+				409100CCFBAB002832D6071E /* dx7_voice_data.h */,
+				991EEEA5F9F39E1B822D9EC3 /* dx7_voice_patches.c */,
+				72EAD61194614A2BCABA9749 /* dx7_voice_render.c */,
+				FBD01985162C49A2B685012A /* dx7_voice_tables.c */,
+				E5F09903F79E1C19658E37B6 /* dx7_voice.c */,
+				0EA6CD95DAFE0964B5C9B502 /* dx7_voice.h */,
+				36C45901CE810BC0E96DEFE2 /* gui_callbacks.h */,
+				3DFA85C7026B70A91DC9ADEE /* gui_data.h */,
+				E3C6BF2B07ADCCE08CEBD40C /* gui_images.h */,
+				20E78208485B633DBD4CF73E /* gui_interface.h */,
+				809BF7567C08DBA101E288BE /* gui_main.h */,
+				9C4629BC6AAE41DCAF9EA7FB /* gui_midi.h */,
+				5ACF1EB18179527B1A509A38 /* gui_patch_edit.h */,
+				F4F38DAFC7F226152F6F0D43 /* gui_retro_console.h */,
+				8E1D6ECD6DFE70F3297BA0CE /* hexter_engine.c */,
+				19E5B5EDB85428D18D90B9D9 /* hexter_engine.h */,
+				0067340DE83F8E93F89192F5 /* hexter_mutex.h */,
+				2E836EBA05271B5370BEEDC7 /* hexter_synth.c */,
+				FA60993D8A22D1A61AED9AB7 /* hexter_synth.h */,
+				A7BD9539A5649F5859D4ADD5 /* hexter_types.h */,
+				9BE8E1079AE2759A52697011 /* hexter.h */,
+			);
+			name = Engine;
+			path = src;
+			sourceTree = "<group>";
+		};
+		780F5E617B257EDC3CEC7E4A /* hexter */ = {
+			isa = PBXGroup;
+			children = (
+				C2D3F23F91B1AD7E31F1A0B4 /* Banks */,
+				4677A68A6127699BC63EB0BA /* Engine */,
+			);
+			name = hexter;
+			path = ..;
+			sourceTree = "<group>";
+		};
+		8832082C01AE3207F5337C3D /* Hexter */ = {
+			isa = PBXGroup;
+			children = (
+				BF7F78E4841C5774C3717E62 /* Assets.xcassets */,
+				938839CE26E2490B9C6BD2E2 /* ContentView.swift */,
+				CE675FA51D4E1E383653EE4C /* Engine.swift */,
+				F27EB0A2BAA7A09B9AA1273B /* HexterApp.swift */,
+				335F1CDBDFFD16C0443EB52C /* Info.plist */,
+				9C5599CB79BD5612069CC8D7 /* KeyboardView.swift */,
+				30257175514F0BC0A306BE3B /* MIDIInput.swift */,
+				AFBF5A6C66D3791DAB16031F /* Bridge */,
+			);
+			path = Hexter;
+			sourceTree = "<group>";
+		};
+		AFBF5A6C66D3791DAB16031F /* Bridge */ = {
+			isa = PBXGroup;
+			children = (
+				5F1E4960C17C97169FD173EB /* hexter_bridge.c */,
+				80233C03DA12C37DE2A1B8E5 /* hexter_bridge.h */,
+				AB24215B8EBF788D1DE0A0CB /* Hexter-Bridging-Header.h */,
+			);
+			path = Bridge;
+			sourceTree = "<group>";
+		};
+		C2D3F23F91B1AD7E31F1A0B4 /* Banks */ = {
+			isa = PBXGroup;
+			children = (
+				30187A0D97C6225077E84E89 /* default_patches.dx7 */,
+				39A0788F2BF7BA5B61FF520C /* dx7_roms.dx7 */,
+				F395B4CEAB8AB779D61A1402 /* fb01_roms_converted_5.dx7 */,
+				AD05C2606F1B708D29E0AE26 /* fb01_roms_converted_12.dx7 */,
+				BA51CC94CEFD489772D849B1 /* fb01_roms_converted_34.dx7 */,
+				E0382FCB2AE1B2FFB5C061B6 /* tx7_roms.dx7 */,
+			);
+			name = Banks;
+			path = extra;
+			sourceTree = "<group>";
+		};
+		C6419D2954AD94636B6686B0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DD7AF2F1C366EF422AA61691 /* Hexter.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1E3452752E73E6C9A03BC7D2 /* Hexter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3FFE7226F18698D75C633C01 /* Build configuration list for PBXNativeTarget "Hexter" */;
+			buildPhases = (
+				6BCDB9C0B6170DF5B8D209F1 /* Sources */,
+				46FC1AE8F6A98A23E6FEBE52 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Hexter;
+			packageProductDependencies = (
+			);
+			productName = Hexter;
+			productReference = DD7AF2F1C366EF422AA61691 /* Hexter.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6756B0A62794431410B5CB7D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					1E3452752E73E6C9A03BC7D2 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 44AAC666D290A1B534BFD1B9 /* Build configuration list for PBXProject "Hexter" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 311A87AA62CECB7D8B9362A9;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C6419D2954AD94636B6686B0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1E3452752E73E6C9A03BC7D2 /* Hexter */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		46FC1AE8F6A98A23E6FEBE52 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D5EDEE02DD22278D60716ED /* Assets.xcassets in Resources */,
+				CE4A14134525B4CE55B32897 /* default_patches.dx7 in Resources */,
+				C361000453CAF4D4A78C1107 /* dx7_roms.dx7 in Resources */,
+				D05F14CA1759FE9BBF519792 /* fb01_roms_converted_12.dx7 in Resources */,
+				972DD0E1852A1F4375F93B03 /* fb01_roms_converted_34.dx7 in Resources */,
+				A0ADDF3105F0916B1E4C1650 /* fb01_roms_converted_5.dx7 in Resources */,
+				0129FB87399D4E6034FA52F2 /* tx7_roms.dx7 in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6BCDB9C0B6170DF5B8D209F1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D5CACCB9AC408D5B8614BDAB /* ContentView.swift in Sources */,
+				CA455C22A8B664B01018E6D9 /* Engine.swift in Sources */,
+				45285EF1F6F949C2202F52EF /* HexterApp.swift in Sources */,
+				7852E5E32B056774E21A048E /* KeyboardView.swift in Sources */,
+				9FFE08841F7229F578C01DEE /* MIDIInput.swift in Sources */,
+				5249B7A7010DF8AAC3223575 /* dx7_bank.c in Sources */,
+				5879C833A0AC1E3B672EDDF5 /* dx7_voice.c in Sources */,
+				9A513D82FB616EC8582E3226 /* dx7_voice_data.c in Sources */,
+				E598180FE637C90F0BC1674D /* dx7_voice_patches.c in Sources */,
+				82C35BFE405ED39056491B94 /* dx7_voice_render.c in Sources */,
+				27929F441C8516D29300C642 /* dx7_voice_tables.c in Sources */,
+				FA9803059FF32E38EE1A4732 /* hexter_bridge.c in Sources */,
+				F0D652D27C7DF487477E7344 /* hexter_engine.c in Sources */,
+				A637F96DF5E66C27E540A239 /* hexter_synth.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		13C1E4ACDB2B206AD8DB1C62 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"VERSION=\\\"2.2.0\\\"",
+				);
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../src $(SRCROOT)/Hexter/Bridge";
+				INFOPLIST_FILE = Hexter/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.keithadler.hexter;
+				PRODUCT_NAME = hexter;
+				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "Hexter/Bridge/Hexter-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		40B53A17E2D0A597D58D27FF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"VERSION=\\\"2.2.0\\\"",
+				);
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../src $(SRCROOT)/Hexter/Bridge";
+				INFOPLIST_FILE = Hexter/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.keithadler.hexter;
+				PRODUCT_NAME = hexter;
+				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "Hexter/Bridge/Hexter-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		4D0E28BDB3B7233193B6345A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 2.2.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		91FB14663F640395DC9374E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 2.2.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3FFE7226F18698D75C633C01 /* Build configuration list for PBXNativeTarget "Hexter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				13C1E4ACDB2B206AD8DB1C62 /* Debug */,
+				40B53A17E2D0A597D58D27FF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		44AAC666D290A1B534BFD1B9 /* Build configuration list for PBXProject "Hexter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				91FB14663F640395DC9374E9 /* Debug */,
+				4D0E28BDB3B7233193B6345A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6756B0A62794431410B5CB7D /* Project object */;
+}

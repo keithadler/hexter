@@ -1,0 +1,75 @@
+# XcodeGen spec for the iOS app. `xcodegen generate` in this folder rewrites Hexter.xcodeproj;
+# the generated project is committed so nobody needs XcodeGen to open it in Xcode.
+name: Hexter
+options:
+  bundleIdPrefix: org.keithadler
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: false
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "2.2.0"          # keep in step with VERSION in ../CMakeLists.txt
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1,2"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    GCC_C_LANGUAGE_STANDARD: gnu11
+
+targets:
+  Hexter:
+    type: application
+    platform: iOS
+    sources:
+      - path: Hexter
+      - path: ../src
+        name: Engine
+        includes:
+          - dx7_voice.c
+          - dx7_voice_data.c
+          - dx7_voice_patches.c
+          - dx7_voice_render.c
+          - dx7_voice_tables.c
+          - hexter_synth.c
+          - dx7_bank.c
+          - hexter_engine.c
+          - "*.h"
+        compilerFlags: "-O2 -ffp-contract=off -Wno-shorten-64-to-32"
+      - path: ../extra
+        name: Banks
+        buildPhase: resources
+        includes:
+          - "*.dx7"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.keithadler.hexter
+        PRODUCT_NAME: hexter
+        SWIFT_OBJC_BRIDGING_HEADER: Hexter/Bridge/Hexter-Bridging-Header.h
+        HEADER_SEARCH_PATHS: "$(SRCROOT)/../src $(SRCROOT)/Hexter/Bridge"
+        GCC_PREPROCESSOR_DEFINITIONS:
+          - "$(inherited)"
+          - 'VERSION=\"2.2.0\"'
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    info:
+      path: Hexter/Info.plist
+      properties:
+        CFBundleDisplayName: hexter
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIRequiresFullScreen: true
+        UIBackgroundModes:
+          - audio
+        NSBluetoothAlwaysUsageDescription: hexter uses Bluetooth to connect to Bluetooth MIDI keyboards.
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        ITSAppUsesNonExemptEncryption: false

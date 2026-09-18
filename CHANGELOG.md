@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- An iPhone and iPad app in `ios/`, the Android app's twin: the engine behind an
+  AVAudioEngine source node, every CoreMIDI source (USB or Bluetooth) feeding it, Apple's
+  Bluetooth MIDI pairing screen, the bundled banks plus any bank file from Files, a voice
+  list, volume, a level meter and a two-octave keyboard. iOS 16 or newer. Apple does not
+  allow distributing it outside its store, so the README walks a first-time Xcode user
+  through building it onto their own phone with a free Apple ID. CI builds it for the
+  simulator and for a device.
+
 ## 2.2.0 (2026-09-17)
 
 ### Added
