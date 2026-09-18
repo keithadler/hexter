@@ -3,14 +3,23 @@
 ## Unreleased
 
 ### Added
-- An **Algorithm** parameter, 1 to 32, on the CLAP and LV2 plugins and so on the
-  standalone and the Audio Unit as well. It picks the patch's operator wiring, the knob
-  the hardware has on its front panel. Moving it edits the sounding patch and is heard
-  under notes that are already held; selecting a program brings back that patch's own
-  algorithm. Asked for on theabolton/hexter#18.
+- An **Algorithm** parameter on the CLAP and LV2 plugins, and so on the standalone and
+  the Audio Unit as well. It forces the patch's operator wiring, the knob the hardware
+  has on its front panel. It is an override, not a setting: at **Patch**, where it rests,
+  every program plays its own algorithm. Move it to 1-32 and that wiring is forced, which
+  is heard under notes already held; move it back, or select a program, and the patch's
+  own algorithm returns. Asked for on theabolton/hexter#18.
 - The engine gained `hexter_engine_get_voice_parameter()` to read a single voice
   parameter back, and voice parameter 134 (the algorithm) now reaches playing voices the
   way operator parameters already did.
+- A project page at https://keithadler.github.io/hexter/. It reads the current release
+  from GitHub when it loads, so its version and download links cannot fall behind the way
+  the old project page did.
+
+### Changed
+- The CLAP plugin's saved state gained a short trailer for its own settings, after the
+  engine's block. State written by an older version still loads, with the algorithm knob
+  at Patch.
 
 ## 2.2.2 (2026-09-18)
 

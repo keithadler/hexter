@@ -177,16 +177,18 @@ which is how a real DX7 module works:</p>
 <table>
   <tr><th>Parameter</th><th>Range</th><th></th></tr>
   <tr><td>Program</td><td>1 to 128</td><td>Named from the loaded bank. MIDI program change works too.</td></tr>
-  <tr><td>Algorithm</td><td>1 to 32</td><td>The patch's operator wiring, the knob on the front panel of the hardware.</td></tr>
+  <tr><td>Algorithm</td><td>Patch, or 1 to 32</td><td>Forces the patch's operator wiring, the knob on the front panel of the hardware.</td></tr>
   <tr><td>Tuning</td><td>415.3 to 466.2 Hz</td><td>A4</td></tr>
   <tr><td>Volume</td><td>-70 to +20 dB</td><td></td></tr>
   <tr><td>Polyphony</td><td>1 to 64 voices</td><td></td></tr>
   <tr><td>Voice mode</td><td>Poly, Mono, Mono legato, Mono both</td><td></td></tr>
 </table>
 
-<p>Turning the algorithm knob edits the sounding patch and is heard under notes you
-are already holding. Selecting a program brings back that patch's own algorithm, so
-the knob is an override rather than a setting.</p>
+<p>The algorithm knob is an override rather than a setting. At <strong>Patch</strong>,
+where it rests, every program plays its own wiring and the knob does nothing. Move it to
+1-32 and that wiring is forced, which you hear on notes you are already holding rather
+than only on the next one. Move it back to Patch, or select a program, and the patch's
+own algorithm returns.</p>
 
 <p><strong>Loading a bank.</strong> In a CLAP host, use the host's preset browser and
 point it at any bank file. In an LV2 host, set the Bank file property. Either way you

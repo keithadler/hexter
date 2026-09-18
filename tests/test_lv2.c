@@ -96,7 +96,7 @@ static uint8_t control_buf[16384];
 static uint8_t notify_buf[4096];
 static float out_buf[BLOCK];
 static float tuning = 440.0f, volume = 0.0f, polyphony = 10.0f, mono = 0.0f, program = 0.0f;
-static float algorithm = 1.0f;
+static float algorithm = 0.0f;   /* "Patch" */
 
 static LV2_Atom_Forge forge;
 static LV2_Atom_Forge_Frame seq_frame;
@@ -375,36 +375,6 @@ main(int argc, char **argv)
         tuning = 440.0f;
     }
 
-    /* the algorithm port rewires the operators, and does it under a held note */
-    {
-        static float a[BLOCK * 20], b[BLOCK * 20], c[BLOCK * 20];
-        program = 0.0f;   /* BRASS 1 */
-        algorithm = 1.0f;
-        begin_block(); midi3(0, 0x90, 69, 100); lv2_atom_forge_pop(&forge, &seq_frame);
-        run_blocks(inst, 20, a, BLOCK * 20);
-        begin_block(); midi3(0, 0xB0, 120, 0); lv2_atom_forge_pop(&forge, &seq_frame);
-        run_blocks(inst, 2, NULL, 0);
-
-        algorithm = 32.0f;
-        begin_block(); midi3(0, 0x90, 69, 100); lv2_atom_forge_pop(&forge, &seq_frame);
-        run_blocks(inst, 20, b, BLOCK * 20);
-        CHECK(memcmp(a, b, sizeof(a)) != 0, "algorithm port changes the output");
-
-        /* still holding the note: moving the knob must be audible without a new note */
-        algorithm = 5.0f;
-        run_blocks(inst, 20, c, BLOCK * 20);
-        CHECK(memcmp(b, c, sizeof(b)) != 0, "algorithm changes while a note is held");
-        begin_block(); midi3(0, 0xB0, 120, 0); lv2_atom_forge_pop(&forge, &seq_frame);
-        run_blocks(inst, 2, NULL, 0);
-
-        /* selecting a program brings back that patch's own algorithm */
-        program = 1.0f;
-        run_blocks(inst, 2, NULL, 0);
-        program = 0.0f;
-        run_blocks(inst, 2, NULL, 0);
-        algorithm = 1.0f;
-    }
-
     /* state save / restore through the state interface */
     {
         static float a[BLOCK * 8], b[BLOCK * 8];
@@ -427,7 +397,7 @@ main(int argc, char **argv)
         {
             static uint8_t control2[4096];
             static float out2[BLOCK];
-            static float t2 = 440.0f, v2 = -6.0f, p2 = 5.0f, m2 = 0.0f, pr2 = 10.0f, al2 = 1.0f;
+            static float t2 = 440.0f, v2 = -6.0f, p2 = 5.0f, m2 = 0.0f, pr2 = 10.0f, al2 = 0.0f;
             const LV2_State_Interface *si2 = (const LV2_State_Interface *)lilv_instance_get_extension_data(inst2, LV2_STATE__interface);
             lilv_instance_connect_port(inst2, 0, control2);
             lilv_instance_connect_port(inst2, 1, NULL);
@@ -477,6 +447,62 @@ main(int argc, char **argv)
             lilv_instance_deactivate(inst2);
             lilv_instance_free(inst2);
         }
+    }
+
+    /* The algorithm port. Every pass starts from a reset engine, because deactivating and
+     * activating builds a new one and puts the LFO back to phase zero; without that the
+     * comparisons below would pass on drift alone rather than on the wiring. Runs last
+     * because it resets the instance a number of times. */
+    {
+        static float patch_pass[BLOCK * 20], forced[BLOCK * 20];
+        static float held_same[BLOCK * 20], held_moved[BLOCK * 20], restored[BLOCK * 20];
+#define ALG_RESET() do { lilv_instance_deactivate(inst); lilv_instance_activate(inst); } while (0)
+#define ALG_NOTE()  do { begin_block(); midi3(0, 0x90, 69, 100); lv2_atom_forge_pop(&forge, &seq_frame); } while (0)
+#define ALG_OFF()   do { begin_block(); midi3(0, 0xB0, 120, 0); lv2_atom_forge_pop(&forge, &seq_frame); \
+                         run_blocks(inst, 2, NULL, 0); } while (0)
+
+        program = 0.0f;   /* BRASS 1 */
+
+        /* as the patch is written */
+        algorithm = 0.0f;
+        ALG_RESET();
+        ALG_NOTE(); run_blocks(inst, 20, patch_pass, BLOCK * 20);
+        ALG_OFF();
+
+        /* the same note with the wiring forced: same phase, different sound */
+        algorithm = 32.0f;
+        ALG_RESET();
+        ALG_NOTE(); run_blocks(inst, 20, forced, BLOCK * 20);
+        CHECK(memcmp(patch_pass, forced, sizeof(patch_pass)) != 0,
+              "the algorithm port changes the output");
+        ALG_OFF();
+
+        /* hold a note through 40 blocks without touching the knob */
+        ALG_RESET();
+        ALG_NOTE(); run_blocks(inst, 20, NULL, 0);
+        run_blocks(inst, 20, held_same, BLOCK * 20);
+        ALG_OFF();
+
+        /* the same 40 blocks, with the knob moved at the halfway point */
+        algorithm = 32.0f;
+        ALG_RESET();
+        ALG_NOTE(); run_blocks(inst, 20, NULL, 0);
+        algorithm = 5.0f;
+        run_blocks(inst, 20, held_moved, BLOCK * 20);
+        CHECK(memcmp(held_same, held_moved, sizeof(held_same)) != 0,
+              "the algorithm changes under a held note");
+        ALG_OFF();
+
+        /* back to Patch: the patch's own wiring must be exactly what it was */
+        algorithm = 0.0f;
+        ALG_RESET();
+        ALG_NOTE(); run_blocks(inst, 20, restored, BLOCK * 20);
+        CHECK(memcmp(patch_pass, restored, sizeof(patch_pass)) == 0,
+              "Patch puts the patch's own algorithm back");
+        ALG_OFF();
+#undef ALG_RESET
+#undef ALG_NOTE
+#undef ALG_OFF
     }
 
     lilv_instance_deactivate(inst);

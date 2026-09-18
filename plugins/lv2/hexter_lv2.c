@@ -103,6 +103,7 @@ typedef struct {
 
     float last_tuning, last_volume;
     int   last_polyphony, last_mono, last_program, last_algorithm;
+    int   algorithm_saved;   /* the patch's own algorithm under an override, else -1 */
     char  bank_path[PATH_MAX_LEN];
     int   bank_notify_pending;   /* work_response happened; announce in the next run() */
 
@@ -161,8 +162,8 @@ instantiate(const LV2_Descriptor *descriptor, double rate,
     h->last_polyphony = hexter_engine_get_polyphony(h->engine);
     h->last_mono = hexter_engine_get_mono_mode(h->engine);
     h->last_program = hexter_engine_get_program(h->engine);
-    h->last_algorithm = hexter_engine_get_voice_parameter(h->engine,
-                                                          HEXTER_VOICE_PARAM_ALGORITHM) + 1;
+    h->last_algorithm = 0;      /* "Patch" */
+    h->algorithm_saved = -1;
     return (LV2_Handle)h;
 }
 
@@ -264,13 +265,26 @@ run(LV2_Handle instance, uint32_t nframes)
         }
     }
     if (h->algorithm) {
-        /* A patch edit, applied only when the port moves, so selecting a program still
-         * gives you that patch's own algorithm until you touch this. Applied here rather
-         * than queued as an event: render holds the voice list for its whole run. */
+        /* An override, not a patch byte: 0 leaves the patch alone. Applied here rather
+         * than queued as an event, because render holds the voice list for its whole run. */
         int a = (int)lrintf(*h->algorithm);
+        if (a < 0) a = 0;
+        if (a > 32) a = 32;
         if (a != h->last_algorithm) {
+            if (a > 0) {
+                if (h->algorithm_saved < 0)
+                    h->algorithm_saved =
+                        hexter_engine_get_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM);
+                hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM, a - 1);
+            } else if (h->algorithm_saved >= 0) {
+                /* only undo our own edit; a program change since then already replaced it */
+                if (hexter_engine_get_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM)
+                        == h->last_algorithm - 1)
+                    hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM,
+                                                      h->algorithm_saved);
+                h->algorithm_saved = -1;
+            }
             h->last_algorithm = a;
-            hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM, a - 1);
         }
     }
 
@@ -431,8 +445,8 @@ restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve,
         h->last_polyphony = hexter_engine_get_polyphony(h->engine);
         h->last_mono = hexter_engine_get_mono_mode(h->engine);
         h->last_program = hexter_engine_get_program(h->engine);
-    h->last_algorithm = hexter_engine_get_voice_parameter(h->engine,
-                                                          HEXTER_VOICE_PARAM_ALGORITHM) + 1;
+    h->last_algorithm = 0;
+        h->algorithm_saved = -1;
     }
 
     value = retrieve(handle, h->uris.hexter_bank, &size, &type, &vflags);
