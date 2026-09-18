@@ -13,7 +13,8 @@ editor still build on Linux when their libraries are installed.
 |---|---|
 | Plugins | CLAP (`hexter.clap`), LV2 (`hexter.lv2`), Audio Unit (`hexter.component`, macOS), DSSI (legacy, Linux) |
 | Standalone | `hexter.app` (macOS), `hexter` (Linux), `hexter.exe` (Windows): its own window, audio and MIDI, no host needed |
-| Platforms | Linux (x86_64 and arm64), macOS (Apple silicon and Intel), Windows (x64 and arm64) |
+| Android | `hexter-<version>-android.apk`: a phone or tablet app with the same engine, USB MIDI in, and an on-screen keyboard |
+| Platforms | Linux (x86_64 and arm64), macOS (Apple silicon and Intel), Windows (x64 and arm64), Android (8.0 or newer, 64-bit) |
 | Banks | `.syx`, `.dx7`, `.mid` (sysex inside a MIDI file), `.tx7`, `.snd`, `.bnk`, `.dx2`, raw packed voices |
 | Sysex | DX7 single voice, 32-voice bulk dump, voice and function parameter changes |
 | License | GPL-2.0-or-later |
@@ -47,6 +48,46 @@ quarantine flag once:
 ```bash
 xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/CLAP/hexter.clap
 ```
+
+## Android
+
+hexter runs on an Android phone or tablet as an app: the same DX7 engine, a list of voices to
+pick from, a two-octave keyboard on the screen, and MIDI in from a keyboard plugged into the
+USB port. It is not in the Play Store. You install it from a file, which Android allows and
+asks you to confirm once. Here is the whole procedure, for someone who has never done it:
+
+1. **On the phone, open this page in the browser:**
+   [github.com/keithadler/hexter/releases](https://github.com/keithadler/hexter/releases).
+   Under the newest release, tap the file whose name ends in **`-android.apk`**. The browser
+   downloads it; you may see a warning that this type of file can harm your device. That is
+   the standard warning for any app that does not come from the store. Tap **Download anyway**
+   or **OK**.
+2. **Open the downloaded file.** Pull down the notification shade and tap the download, or
+   open the **Files** app and look in **Downloads**.
+3. **Allow the install.** The first time, Android says something like *"For your security,
+   your phone is not allowed to install unknown apps from this source."* Tap **Settings**,
+   turn on **Allow from this source**, and go back. Then tap **Install**. Android may scan the
+   app with Play Protect first; let it.
+4. **Open hexter.** It starts with the original DX7 ROM voices loaded. Tap a voice in the
+   list and play the keyboard at the bottom of the screen. The orange bar next to the volume
+   slider moves when sound is coming out.
+5. **Plug in a keyboard.** Any keyboard or synth with USB MIDI, such as the M-VAVE FM-1,
+   connects with a **USB OTG cable or adapter**: the small end goes in the phone, the
+   keyboard's USB cable goes in the other end. The line under the bank name changes from
+   *"No MIDI input"* to *"MIDI in: ..."* and the keyboard plays hexter. Turn the volume up
+   on the phone; the keyboard's own volume does nothing here.
+6. **Other banks.** The menu at the top holds the six banks the desktop versions ship. **Open
+   bank…** loads any DX7 bank file on the phone, `.syx` or `.dx7`, for instance one you
+   downloaded or received in a message. A bank sent from a keyboard as a bulk dump over MIDI
+   loads too.
+
+**Updating.** Download the new `.apk` and install it the same way. If Android refuses with
+*"App not installed"* or a message about a different signature, uninstall hexter first (hold
+its icon, tap **Uninstall**), then install the new one. Your own bank files are not inside the
+app, so nothing is lost.
+
+**What it needs.** Android 8.0 or newer on a 64-bit device, which is every phone sold in the
+last several years. Bluetooth MIDI is not supported yet; USB is.
 
 ## Using it
 

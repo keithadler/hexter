@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">hexter</string>
+    <string name="open_bank">Open bank…</string>
+    <string name="no_midi">Looking for MIDI devices…</string>
+    <string name="no_audio">Could not open an audio stream.</string>
+    <string name="bank_loaded">%1$s: %2$d voices, %3$d Hz</string>
+    <string name="bank_failed">Could not read %1$s as a DX7 bank.</string>
+    <string name="volume">Vol</string>
+</resources>

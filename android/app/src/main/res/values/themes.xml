@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.Hexter" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#FF8C00</item>
+        <item name="colorSecondary">#FF8C00</item>
+    </style>
+</resources>

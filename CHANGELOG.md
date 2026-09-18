@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- An Android app: the engine behind an Oboe low-latency stream, USB MIDI in through Android's
+  MIDI service with sysex reassembled so bank dumps load, the six bundled banks plus any bank
+  file on the device, a voice list, volume, a level meter and a two-octave keyboard on the
+  screen. Android 8.0 or newer, arm64 and x86_64. Built in `android/` with Gradle and the NDK
+  from the same engine sources; CI builds it, the release workflow signs and attaches it.
+  Asked for on theabolton/hexter#18.
+
 ## 2.1.2 (2026-09-17)
 
 ### Added
