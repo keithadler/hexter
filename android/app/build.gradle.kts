@@ -27,7 +27,8 @@ android {
         versionName = rootProject.file("../CMakeLists.txt").readText()
             .let { Regex("""VERSION\s+(\d+\.\d+\.\d+)""").find(it)?.groupValues?.get(1) ?: "0.0.0" }
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
-        externalNativeBuild { cmake { arguments += listOf("-DANDROID_STL=c++_static") } }
+        // Oboe's prebuilt package links the shared C++ runtime, so the app must too.
+        externalNativeBuild { cmake { arguments += listOf("-DANDROID_STL=c++_shared") } }
     }
 
     signingConfigs {
