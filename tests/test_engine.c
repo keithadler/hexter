@@ -401,6 +401,63 @@ test_sysex(void)
     hexter_engine_free(e);
 }
 
+/* ---- algorithm ---- */
+
+static void
+test_algorithm(void)
+{
+    hexter_engine_t *e1 = hexter_engine_new(44100.0f);
+    hexter_engine_t *e2 = hexter_engine_new(44100.0f);
+    static float held[11025], changed[11025];
+    hexter_event_t note;
+    char path[1024];
+    uint8_t cur[155];
+    int alg0;
+
+    snprintf(path, sizeof(path), "%s/dx7_roms.dx7", bank_dir);
+    hexter_engine_load_bank_file(e1, path, 0, NULL);
+    hexter_engine_load_bank_file(e2, path, 0, NULL);
+
+    /* the getter agrees with the patch data, and refuses a bad index */
+    hexter_engine_get_current_patch(e1, cur);
+    alg0 = hexter_engine_get_voice_parameter(e1, HEXTER_VOICE_PARAM_ALGORITHM);
+    CHECK(alg0 == cur[HEXTER_VOICE_PARAM_ALGORITHM],
+          "getter reads algorithm %d, patch has %d", alg0, cur[HEXTER_VOICE_PARAM_ALGORITHM]);
+    CHECK(hexter_engine_get_voice_parameter(e1, 155) == -1, "index past the end is refused");
+    CHECK(hexter_engine_get_voice_parameter(e1, -1) == -1, "negative index is refused");
+
+    hexter_engine_set_voice_parameter(e1, HEXTER_VOICE_PARAM_ALGORITHM, 4);
+    CHECK(hexter_engine_get_voice_parameter(e1, HEXTER_VOICE_PARAM_ALGORITHM) == 4,
+          "algorithm round-trips through the setter");
+    hexter_engine_set_voice_parameter(e1, HEXTER_VOICE_PARAM_ALGORITHM, alg0);
+
+    /* both engines: same note, same first half */
+    memset(&note, 0, sizeof(note));
+    note.type = HEXTER_EV_NOTE_ON; note.a = 60; note.b = 100;
+    render_seconds(e1, held, 5512, &note, 1);
+    render_seconds(e2, changed, 5512, &note, 1);
+    CHECK(!memcmp(held, changed, sizeof(float) * 5512), "same note renders the same in both");
+
+    /* one keeps going, the other has its algorithm moved with the note still down */
+    hexter_engine_set_voice_parameter(e2, HEXTER_VOICE_PARAM_ALGORITHM,
+                                      alg0 == 31 ? 0 : 31);
+    render_seconds(e1, held + 5512, 5513, NULL, 0);
+    render_seconds(e2, changed + 5512, 5513, NULL, 0);
+    CHECK(memcmp(held + 5512, changed + 5512, sizeof(float) * 5513) != 0,
+          "the algorithm change is heard under a held note");
+
+    /* selecting a program brings back that patch's own algorithm */
+    hexter_engine_select_program(e2, 7);
+    hexter_engine_render(e2, changed, 256, NULL, 0);
+    hexter_engine_get_current_patch(e2, cur);
+    CHECK(hexter_engine_get_voice_parameter(e2, HEXTER_VOICE_PARAM_ALGORITHM)
+              == cur[HEXTER_VOICE_PARAM_ALGORITHM],
+          "a program change replaces the edited algorithm");
+
+    hexter_engine_free(e1);
+    hexter_engine_free(e2);
+}
+
 /* ---- state ---- */
 
 static void
@@ -580,6 +637,7 @@ main(int argc, char **argv)
     test_render_sine();
     test_determinism_and_rom();
     test_sysex();
+    test_algorithm();
     test_state();
     test_voices();
     test_sample_rates();

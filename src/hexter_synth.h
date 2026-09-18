@@ -152,6 +152,7 @@ void  hexter_instance_control_change(hexter_instance_t *instance,
                                      unsigned int param, signed int value);
 void  hexter_instance_apply_op_param(hexter_instance_t *instance, int opnum,
                                      int param, signed int value);
+void  hexter_instance_apply_algorithm(hexter_instance_t *instance, int algorithm);
 void  hexter_instance_channel_pressure(hexter_instance_t *instance,
                                        signed int pressure);
 void  hexter_instance_pitch_bend(hexter_instance_t *instance, signed int value);

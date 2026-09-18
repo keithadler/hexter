@@ -486,6 +486,28 @@ hexter_instance_update_op_param(hexter_instance_t *instance, int opnum,
 }
 
 /*
+ * hexter_instance_apply_algorithm
+ *
+ * apply an algorithm change (0-31) to any playing voices. The render loop
+ * reads voice->algorithm every block and nothing else in the voice is
+ * derived from it, so a change is heard on notes that are already sounding
+ * rather than only on the next one.
+ */
+void
+hexter_instance_apply_algorithm(hexter_instance_t *instance, int algorithm)
+{
+    int i;
+    dx7_voice_t *voice;
+
+    algorithm &= 0x1f;
+    for (i = 0; i < instance->max_voices; i++) {
+        voice = instance->voice[i];
+        if (_PLAYING(voice))
+            voice->algorithm = (uint8_t)algorithm;
+    }
+}
+
+/*
  * hexter_instance_apply_op_param
  *
  * apply an already-scaled (0-99 etc.) operator parameter change to any

@@ -146,8 +146,12 @@ void  hexter_engine_get_current_patch(const hexter_engine_t *e, uint8_t *unpacke
 /* replace the sounding patch (unsaved edit; new notes use it) */
 void  hexter_engine_set_current_patch(hexter_engine_t *e, const uint8_t *unpacked155);
 /* single voice parameter edit, index 0..155 in DX7 voice-data order;
- * operator parameters also update playing voices */
+ * operator parameters and the algorithm (index 134) also update playing voices */
 void  hexter_engine_set_voice_parameter(hexter_engine_t *e, int index, int value);
+/* read one voice parameter back; -1 if the index is out of range */
+int   hexter_engine_get_voice_parameter(const hexter_engine_t *e, int index);
+/* the algorithm is voice parameter 134, stored 0..31 and shown to people as 1..32 */
+#define HEXTER_VOICE_PARAM_ALGORITHM 134
 /* write the edit buffer back into the bank as 'program' */
 void  hexter_engine_store_current_patch(hexter_engine_t *e, int program);
 

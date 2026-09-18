@@ -246,7 +246,7 @@ main(int argc, char **argv)
     /* params */
     {
         uint32_t i, n = params->count(p);
-        CHECK(n == 5, "param count %u", n);
+        CHECK(n == 6, "param count %u", n);
         for (i = 0; i < n; i++) {
             clap_param_info_t info;
             CHECK(params->get_info(p, i, &info), "param %u info", i);
@@ -259,6 +259,19 @@ main(int argc, char **argv)
         CHECK(params->text_to_value(p, 4, "12: E.PIANO 1", &v) && fabs(v - 11.0) < 1e-9, "program text to value %f", v);
         CHECK(params->text_to_value(p, 3, "Mono legato", &v) && fabs(v - 2.0) < 1e-9, "mono text to value %f", v);
         CHECK(params->text_to_value(p, 0, "432 Hz", &v) && fabs(v - 432.0) < 1e-9, "tuning text to value %f", v);
+
+        /* algorithm: 1-32 to a person, 0-31 in the voice data, and it follows the patch */
+        {
+            clap_param_info_t info;
+            CHECK(params->get_info(p, 5, &info) && !strcmp(info.name, "Algorithm"), "param 5 is Algorithm");
+            CHECK(info.min_value == 1 && info.max_value == 32, "algorithm range %f-%f",
+                  info.min_value, info.max_value);
+            CHECK(params->get_value(p, 5, &v) && v >= 1 && v <= 32, "algorithm value in range (%f)", v);
+            CHECK(params->value_to_text(p, 5, 17, text, sizeof(text)) && !strcmp(text, "17"),
+                  "algorithm text (%s)", text);
+            CHECK(params->text_to_value(p, 5, "17", &v) && fabs(v - 17.0) < 1e-9,
+                  "algorithm text to value %f", v);
+        }
     }
 
     /* load the ROM bank through preset-load */

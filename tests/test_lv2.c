@@ -96,6 +96,7 @@ static uint8_t control_buf[16384];
 static uint8_t notify_buf[4096];
 static float out_buf[BLOCK];
 static float tuning = 440.0f, volume = 0.0f, polyphony = 10.0f, mono = 0.0f, program = 0.0f;
+static float algorithm = 1.0f;
 
 static LV2_Atom_Forge forge;
 static LV2_Atom_Forge_Frame seq_frame;
@@ -251,7 +252,7 @@ main(int argc, char **argv)
     CHECK(plugin != NULL, "bundle %s contains %s", bundle, HEXTER_URI);
     if (!plugin) return 1;
 
-    CHECK(lilv_plugin_get_num_ports(plugin) == 8, "8 ports, have %u", lilv_plugin_get_num_ports(plugin));
+    CHECK(lilv_plugin_get_num_ports(plugin) == 9, "9 ports, have %u", lilv_plugin_get_num_ports(plugin));
     {
         LilvNode *name = lilv_plugin_get_name(plugin);
         CHECK(name && !strcmp(lilv_node_as_string(name), "hexter"), "plugin name");
@@ -283,6 +284,7 @@ main(int argc, char **argv)
     lilv_instance_connect_port(inst, 5, &polyphony);
     lilv_instance_connect_port(inst, 6, &mono);
     lilv_instance_connect_port(inst, 7, &program);
+    lilv_instance_connect_port(inst, 8, &algorithm);
     lilv_instance_activate(inst);
 
     /* play a chord on the default bank */
@@ -373,6 +375,36 @@ main(int argc, char **argv)
         tuning = 440.0f;
     }
 
+    /* the algorithm port rewires the operators, and does it under a held note */
+    {
+        static float a[BLOCK * 20], b[BLOCK * 20], c[BLOCK * 20];
+        program = 0.0f;   /* BRASS 1 */
+        algorithm = 1.0f;
+        begin_block(); midi3(0, 0x90, 69, 100); lv2_atom_forge_pop(&forge, &seq_frame);
+        run_blocks(inst, 20, a, BLOCK * 20);
+        begin_block(); midi3(0, 0xB0, 120, 0); lv2_atom_forge_pop(&forge, &seq_frame);
+        run_blocks(inst, 2, NULL, 0);
+
+        algorithm = 32.0f;
+        begin_block(); midi3(0, 0x90, 69, 100); lv2_atom_forge_pop(&forge, &seq_frame);
+        run_blocks(inst, 20, b, BLOCK * 20);
+        CHECK(memcmp(a, b, sizeof(a)) != 0, "algorithm port changes the output");
+
+        /* still holding the note: moving the knob must be audible without a new note */
+        algorithm = 5.0f;
+        run_blocks(inst, 20, c, BLOCK * 20);
+        CHECK(memcmp(b, c, sizeof(b)) != 0, "algorithm changes while a note is held");
+        begin_block(); midi3(0, 0xB0, 120, 0); lv2_atom_forge_pop(&forge, &seq_frame);
+        run_blocks(inst, 2, NULL, 0);
+
+        /* selecting a program brings back that patch's own algorithm */
+        program = 1.0f;
+        run_blocks(inst, 2, NULL, 0);
+        program = 0.0f;
+        run_blocks(inst, 2, NULL, 0);
+        algorithm = 1.0f;
+    }
+
     /* state save / restore through the state interface */
     {
         static float a[BLOCK * 8], b[BLOCK * 8];
@@ -395,7 +427,7 @@ main(int argc, char **argv)
         {
             static uint8_t control2[4096];
             static float out2[BLOCK];
-            static float t2 = 440.0f, v2 = -6.0f, p2 = 5.0f, m2 = 0.0f, pr2 = 10.0f;
+            static float t2 = 440.0f, v2 = -6.0f, p2 = 5.0f, m2 = 0.0f, pr2 = 10.0f, al2 = 1.0f;
             const LV2_State_Interface *si2 = (const LV2_State_Interface *)lilv_instance_get_extension_data(inst2, LV2_STATE__interface);
             lilv_instance_connect_port(inst2, 0, control2);
             lilv_instance_connect_port(inst2, 1, NULL);
@@ -405,6 +437,7 @@ main(int argc, char **argv)
             lilv_instance_connect_port(inst2, 5, &p2);
             lilv_instance_connect_port(inst2, 6, &m2);
             lilv_instance_connect_port(inst2, 7, &pr2);
+            lilv_instance_connect_port(inst2, 8, &al2);
             CHECK(si2->restore(lilv_instance_get_handle(inst2), retrieve, NULL, 0, features) == LV2_STATE_SUCCESS, "state restore");
             lilv_instance_activate(inst2);
 

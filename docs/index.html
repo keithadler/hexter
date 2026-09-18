@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>hexter</title>
+<meta name="description" content="hexter is a Yamaha DX7 modeling synthesizer: six-operator FM, all 32 algorithms, and any DX7 bank ever made. CLAP, LV2, Audio Unit, standalone, Android and iOS.">
+<style>
+:root {
+  --bg: #16171a;
+  --panel: #1e2024;
+  --line: #303339;
+  --text: #e8e9ea;
+  --dim: #a2a6ad;
+  --accent: #ff8c00;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff; --panel: #f6f6f7; --line: #e0e1e4;
+    --text: #1a1b1d; --dim: #5d626b; --accent: #d97100;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.62 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 72px; }
+header { padding: 56px 0 8px; }
+h1 { font-size: 40px; line-height: 1.1; margin: 0 0 6px; letter-spacing: -0.02em; }
+h1 .dot { color: var(--accent); }
+.tag { color: var(--dim); font-size: 18px; margin: 0 0 22px; }
+h2 { font-size: 21px; margin: 44px 0 12px; letter-spacing: -0.01em; }
+h3 { font-size: 16px; margin: 26px 0 6px; }
+p, li { color: var(--text); }
+p { margin: 0 0 14px; }
+a { color: var(--accent); }
+code, kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 4px; padding: 1px 5px;
+}
+.lede { font-size: 17px; }
+.dim { color: var(--dim); }
+.small { font-size: 14px; }
+
+.rel {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 18px 20px; margin: 26px 0 8px;
+}
+.rel-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.rel-head strong { font-size: 18px; }
+.ver {
+  color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 600;
+}
+.dl { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.dl li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.dl .plat { min-width: 168px; color: var(--dim); font-size: 14px; }
+.dl a { text-decoration: none; border-bottom: 1px solid transparent; word-break: break-all; }
+.dl a:hover { border-bottom-color: var(--accent); }
+.bytes { color: var(--dim); font-size: 13px; }
+
+table { border-collapse: collapse; width: 100%; margin: 0 0 16px; font-size: 15px; display: block; overflow-x: auto; }
+th, td { text-align: left; padding: 7px 12px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--dim); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+ol, ul { margin: 0 0 14px; padding-left: 22px; }
+li { margin-bottom: 7px; }
+
+.note {
+  border-left: 3px solid var(--accent); background: var(--panel);
+  padding: 12px 16px; margin: 0 0 16px; border-radius: 0 6px 6px 0;
+}
+.note p:last-child { margin-bottom: 0; }
+
+footer {
+  margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line);
+  color: var(--dim); font-size: 14px;
+}
+footer a { color: var(--dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>hexter<span class="dot">.</span></h1>
+  <p class="tag">A Yamaha DX7, in software.</p>
+</header>
+
+<p class="lede">Six-operator FM, all 32 algorithms, the envelope and LFO behavior of the
+real instrument, and it loads any DX7 bank ever made. Free software since 2004,
+written by Sean Bolton. This is the 2026 revival: the same engine, built as modern
+plugins for Linux, macOS and Windows, plus apps for Android and iOS.</p>
+
+<div class="rel">
+  <div class="rel-head">
+    <strong>Download</strong>
+    <span class="ver" id="ver">latest release</span>
+    <span class="dim small" id="date"></span>
+  </div>
+  <ul class="dl" id="downloads">
+    <li><span class="plat">Linux x86_64</span><a href="https://github.com/keithadler/hexter/releases/latest">tar.gz</a></li>
+    <li><span class="plat">Linux arm64</span><a href="https://github.com/keithadler/hexter/releases/latest">tar.gz</a></li>
+    <li><span class="plat">macOS universal</span><a href="https://github.com/keithadler/hexter/releases/latest">zip</a></li>
+    <li><span class="plat">Windows x64</span><a href="https://github.com/keithadler/hexter/releases/latest">zip</a></li>
+    <li><span class="plat">Windows ARM</span><a href="https://github.com/keithadler/hexter/releases/latest">zip</a></li>
+    <li><span class="plat">Android</span><a href="https://github.com/keithadler/hexter/releases/latest">apk</a></li>
+  </ul>
+  <p class="small dim" style="margin:14px 0 0">
+    Every release is on the
+    <a href="https://github.com/keithadler/hexter/releases">releases page</a>,
+    with notes for what changed.
+  </p>
+</div>
+
+<h2>What you get</h2>
+
+<table>
+  <tr><th>Plugins</th><td>CLAP, LV2, Audio Unit on macOS, and the legacy DSSI plugin with its GTK2 editor on Linux</td></tr>
+  <tr><th>Standalone</th><td>Its own application with audio and MIDI, no host needed, on all three desktops</td></tr>
+  <tr><th>Phones</th><td>An Android app, and an iPhone and iPad app you build yourself</td></tr>
+  <tr><th>Command line</th><td><code>hexter-render</code> turns a MIDI file and a bank into a WAV</td></tr>
+  <tr><th>Banks</th><td><code>.syx</code>, <code>.dx7</code>, <code>.mid</code>, <code>.tx7</code>, <code>.snd</code>, <code>.bnk</code>, <code>.dx2</code>, and raw packed voices</td></tr>
+  <tr><th>Sysex</th><td>Single voice, 32-voice bulk dump, voice and function parameter changes, as the hardware sends them</td></tr>
+  <tr><th>License</th><td>GPL-2.0-or-later</td></tr>
+</table>
+
+<h2>Installing on a computer</h2>
+
+<p>Unzip the package for your platform and copy what you want:</p>
+
+<table>
+  <tr><th></th><th>CLAP</th><th>LV2</th><th>Audio Unit</th></tr>
+  <tr><td>Linux</td><td><code>~/.clap/</code></td><td><code>~/.lv2/</code></td><td></td></tr>
+  <tr><td>macOS</td><td><code>~/Library/Audio/Plug-Ins/CLAP/</code></td><td><code>~/Library/Audio/Plug-Ins/LV2/</code></td><td><code>~/Library/Audio/Plug-Ins/Components/</code></td></tr>
+  <tr><td>Windows</td><td><code>%COMMONPROGRAMFILES%\CLAP\</code></td><td><code>%APPDATA%\LV2\</code></td><td></td></tr>
+</table>
+
+<p>The standalone runs from wherever you put it. Logic Pro and GarageBand use the
+Audio Unit; restart Logic after copying it and it appears under AU Instruments as
+Keith Adler &gt; hexter.</p>
+
+<div class="note">
+  <p><strong>The standalone window is small on purpose.</strong> hexter has no controls
+  of its own, so its window is a short note saying it is running. Audio and MIDI settings,
+  and saving or loading its state, live in the menu behind the icon at the top left of the
+  window. Right-clicking the title bar opens the same menu.</p>
+</div>
+
+<h2>Installing on a phone</h2>
+
+<h3>Android</h3>
+<p>Download the <code>.apk</code> above and open it. Android will ask once whether to
+allow installs from your browser or file manager; say yes, then tap Install. It is not
+in the Play Store, so this is the only route. You need Android 8.0 or newer on a 64-bit
+device, which is every phone sold in the last several years. A USB MIDI keyboard needs
+no setup; for a Bluetooth keyboard, tap Bluetooth MIDI in the app and pick it from the
+list. Each release is signed with its own key, so uninstall the old version before
+installing a new one.</p>
+
+<h3>iPhone and iPad</h3>
+<p>Apple does not allow installing an app from a file, so there is nothing to download.
+With a Mac and Xcode you can build it onto your own phone with a free Apple ID in about
+twenty minutes. The
+<a href="https://github.com/keithadler/hexter#iphone-and-ipad">README has the step by step</a>,
+written for someone who has never opened Xcode. An app signed with a free Apple ID stops
+opening after seven days; press Run again and it works for another seven.</p>
+
+<h2>Playing it</h2>
+
+<p>hexter has no editor. You play it over MIDI and your host shows six parameters,
+which is how a real DX7 module works:</p>
+
+<table>
+  <tr><th>Parameter</th><th>Range</th><th></th></tr>
+  <tr><td>Program</td><td>1 to 128</td><td>Named from the loaded bank. MIDI program change works too.</td></tr>
+  <tr><td>Algorithm</td><td>1 to 32</td><td>The patch's operator wiring, the knob on the front panel of the hardware.</td></tr>
+  <tr><td>Tuning</td><td>415.3 to 466.2 Hz</td><td>A4</td></tr>
+  <tr><td>Volume</td><td>-70 to +20 dB</td><td></td></tr>
+  <tr><td>Polyphony</td><td>1 to 64 voices</td><td></td></tr>
+  <tr><td>Voice mode</td><td>Poly, Mono, Mono legato, Mono both</td><td></td></tr>
+</table>
+
+<p>Turning the algorithm knob edits the sounding patch and is heard under notes you
+are already holding. Selecting a program brings back that patch's own algorithm, so
+the knob is an override rather than a setting.</p>
+
+<p><strong>Loading a bank.</strong> In a CLAP host, use the host's preset browser and
+point it at any bank file. In an LV2 host, set the Bank file property. Either way you
+can also send the bank as a DX7 bulk dump over MIDI, exactly as you would to the
+hardware, or set <code>HEXTER_DEFAULT_BANK</code> to a file that loads on every
+instance. Six banks ship with it, including the original DX7 ROM cartridges.</p>
+
+<h2>Which DX7s it understands</h2>
+
+<p>hexter models the six-operator engine, so it plays anything from that family.
+DX7, TX7, TX816 and TX802 banks load as they are. DX7II and DX7s banks load with the
+base voice; the II's extras live in a separate data block that hexter ignores. DX1 and
+DX5 banks load as they are, each half being a DX7 voice.</p>
+
+<p>The four-operator machines are a different synth with different algorithms, so
+DX100, DX27, DX21, DX11, TX81Z, FB-01 and reface DX banks do not load. The FB-01 banks
+that ship with hexter are conversions, not the originals.</p>
+
+<footer>
+  <p>
+    <a href="https://github.com/keithadler/hexter">Source and issues</a> &middot;
+    <a href="https://github.com/keithadler/hexter/blob/master/CHANGELOG.md">Changelog</a> &middot;
+    <a href="https://github.com/keithadler/hexter/releases">All releases</a>
+  </p>
+  <p>hexter is by Sean Bolton, 2004 onward. Version 2 and the mobile apps by Keith Adler.
+  Free software under the GPL. Yamaha, DX7 and the names of the hardware are trademarks
+  of their owners; this project is not affiliated with Yamaha.</p>
+</footer>
+
+</div>
+
+<script>
+// Read the current release from GitHub so this page cannot go stale. If the request
+// fails, the links above already point at /releases/latest, which is never wrong.
+(function () {
+  var order = [
+    ['linux-x86_64',     'Linux x86_64'],
+    ['linux-aarch64',    'Linux arm64'],
+    ['macos-universal',  'macOS universal'],
+    ['windows-x86_64',   'Windows x64'],
+    ['windows-arm64',    'Windows ARM'],
+    ['android',          'Android']
+  ];
+
+  function size(n) {
+    return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB'
+                        : Math.max(1, Math.round(n / 1024)) + ' KB';
+  }
+
+  fetch('https://api.github.com/repos/keithadler/hexter/releases/latest', {
+    headers: { 'Accept': 'application/vnd.github+json' }
+  })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function (rel) {
+      var tag = (rel.tag_name || '').replace(/^v/, '');
+      if (tag) document.getElementById('ver').textContent = tag;
+
+      if (rel.published_at) {
+        var d = new Date(rel.published_at);
+        document.getElementById('date').textContent =
+          d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+
+      var assets = rel.assets || [];
+      var list = document.getElementById('downloads');
+      var rows = document.createDocumentFragment();
+      var found = 0;
+
+      order.forEach(function (pair) {
+        var key = pair[0], label = pair[1];
+        var a = assets.filter(function (x) { return x.name.indexOf(key) !== -1; })[0];
+        if (!a) return;
+        found++;
+        var li = document.createElement('li');
+        var plat = document.createElement('span');
+        plat.className = 'plat';
+        plat.textContent = label;
+        var link = document.createElement('a');
+        link.href = a.browser_download_url;
+        link.textContent = a.name;
+        var bytes = document.createElement('span');
+        bytes.className = 'bytes';
+        bytes.textContent = size(a.size);
+        li.appendChild(plat);
+        li.appendChild(link);
+        li.appendChild(bytes);
+        rows.appendChild(li);
+      });
+
+      if (found) {
+        list.textContent = '';
+        list.appendChild(rows);
+      }
+    })
+    .catch(function () { /* the fallback links stand */ });
+})();
+</script>
+</body>
+</html>

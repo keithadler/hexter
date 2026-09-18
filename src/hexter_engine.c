@@ -528,6 +528,8 @@ set_voice_parameter_locked(hexter_instance_t *instance, int index, int value)
     } else {
         if (value > global_param_max[index - 126]) value = global_param_max[index - 126];
         instance->current_patch_buffer[index] = (uint8_t)value;
+        if (index == 134)  /* algorithm: playing voices follow it too */
+            hexter_instance_apply_algorithm(instance, value);
     }
     if (instance->overlay_program == instance->current_program)
         instance->overlay_patch_buffer[index] = (uint8_t)value;
@@ -536,6 +538,13 @@ set_voice_parameter_locked(hexter_instance_t *instance, int index, int value)
         memcpy(instance->overlay_patch_buffer, instance->current_patch_buffer,
                DX7_VOICE_SIZE_UNPACKED);
     }
+}
+
+int
+hexter_engine_get_voice_parameter(const hexter_engine_t *instance, int index)
+{
+    if (index < 0 || index >= DX7_VOICE_SIZE_UNPACKED) return -1;
+    return instance->current_patch_buffer[index];
 }
 
 void

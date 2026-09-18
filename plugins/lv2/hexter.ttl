@@ -106,4 +106,14 @@ hex:bank
         lv2:default 0 ;
         lv2:minimum 0 ;
         lv2:maximum 127
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 8 ;
+        lv2:symbol "algorithm" ;
+        lv2:name "Algorithm" ;
+        rdfs:comment "The patch's DX7 algorithm, 1-32. Moving this edits the sounding patch and is heard on notes already held. Selecting a program brings back that patch's own algorithm." ;
+        lv2:portProperty lv2:integer ;
+        lv2:default 1 ;
+        lv2:minimum 1 ;
+        lv2:maximum 32
     ] .
