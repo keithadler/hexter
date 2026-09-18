@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.3.0 (2026-09-18)
 
 ### Added
 - An **Algorithm** parameter on the CLAP and LV2 plugins, and so on the standalone and
