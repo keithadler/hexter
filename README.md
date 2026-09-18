@@ -146,16 +146,24 @@ from Files, or drop files into the hexter folder in Files under *On My iPhone*.
 
 ## Using it
 
-hexter has no window of its own. Your host shows its five parameters and
+hexter has no window of its own. Your host shows its six parameters and
 you play it over MIDI, which is how a real DX7 module works:
 
 | Parameter | Range | Notes |
 |---|---|---|
 | Program | 1 to 128 | Named from the loaded bank. MIDI program change works too. |
+| Algorithm | 1 to 32 | The patch's operator wiring. See below. |
 | Tuning | 415.3 to 466.2 Hz | A4 |
 | Volume | -70 to +20 dB | |
 | Polyphony | 1 to 64 voices | |
 | Voice mode | Poly, Mono, Mono legato, Mono both | |
+
+**The algorithm knob** is the one on the front panel of the hardware: it picks
+which of the 32 operator wirings the patch uses, and turning it is the fastest
+way to make a familiar patch into something else. Turning it edits the sounding
+patch, and the change is heard on notes you are already holding rather than only
+on the next one. Selecting a program brings back that patch's own algorithm, so
+the knob is an override, not a setting. It automates like any other parameter.
 
 **Loading a bank.** In a CLAP host, use the host's preset browser and point
 it at any bank file (hexter implements `clap.preset-load`). In an LV2 host,

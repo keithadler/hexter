@@ -55,6 +55,7 @@ enum {
     PORT_POLYPHONY,
     PORT_MONO_MODE,
     PORT_PROGRAM,
+    PORT_ALGORITHM,
     PORT_COUNT
 };
 
@@ -91,6 +92,7 @@ typedef struct {
     const float             *polyphony;
     const float             *mono_mode;
     const float             *program;
+    const float             *algorithm;
 
     LV2_URID_Map            *map;
     LV2_Worker_Schedule     *schedule;
@@ -100,7 +102,7 @@ typedef struct {
     LV2_Atom_Forge_Frame     notify_frame;
 
     float last_tuning, last_volume;
-    int   last_polyphony, last_mono, last_program;
+    int   last_polyphony, last_mono, last_program, last_algorithm;
     char  bank_path[PATH_MAX_LEN];
     int   bank_notify_pending;   /* work_response happened; announce in the next run() */
 
@@ -159,6 +161,8 @@ instantiate(const LV2_Descriptor *descriptor, double rate,
     h->last_polyphony = hexter_engine_get_polyphony(h->engine);
     h->last_mono = hexter_engine_get_mono_mode(h->engine);
     h->last_program = hexter_engine_get_program(h->engine);
+    h->last_algorithm = hexter_engine_get_voice_parameter(h->engine,
+                                                          HEXTER_VOICE_PARAM_ALGORITHM) + 1;
     return (LV2_Handle)h;
 }
 
@@ -176,6 +180,7 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
       case PORT_POLYPHONY: h->polyphony = (const float *)data; break;
       case PORT_MONO_MODE: h->mono_mode = (const float *)data; break;
       case PORT_PROGRAM:   h->program = (const float *)data; break;
+      case PORT_ALGORITHM: h->algorithm = (const float *)data; break;
       default: break;
     }
 }
@@ -256,6 +261,16 @@ run(LV2_Handle instance, uint32_t nframes)
             memset(&ev, 0, sizeof(ev));
             ev.type = HEXTER_EV_PROGRAM_CHANGE; ev.a = (uint8_t)(p < 0 ? 0 : (p > 127 ? 127 : p));
             h->events[ne++] = ev;
+        }
+    }
+    if (h->algorithm) {
+        /* A patch edit, applied only when the port moves, so selecting a program still
+         * gives you that patch's own algorithm until you touch this. Applied here rather
+         * than queued as an event: render holds the voice list for its whole run. */
+        int a = (int)lrintf(*h->algorithm);
+        if (a != h->last_algorithm) {
+            h->last_algorithm = a;
+            hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM, a - 1);
         }
     }
 
@@ -416,6 +431,8 @@ restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve,
         h->last_polyphony = hexter_engine_get_polyphony(h->engine);
         h->last_mono = hexter_engine_get_mono_mode(h->engine);
         h->last_program = hexter_engine_get_program(h->engine);
+    h->last_algorithm = hexter_engine_get_voice_parameter(h->engine,
+                                                          HEXTER_VOICE_PARAM_ALGORITHM) + 1;
     }
 
     value = retrieve(handle, h->uris.hexter_bank, &size, &type, &vflags);

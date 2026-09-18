@@ -40,6 +40,7 @@ enum {
     P_POLYPHONY,
     P_MONO_MODE,
     P_PROGRAM,
+    P_ALGORITHM,
     P_COUNT
 };
 
@@ -225,6 +226,13 @@ params_get_info(const clap_plugin_t *plugin, uint32_t index, clap_param_info_t *
         info->max_value = 127;
         info->default_value = 0;
         break;
+      case P_ALGORITHM:
+        snprintf(info->name, sizeof(info->name), "Algorithm");
+        info->flags = CLAP_PARAM_IS_STEPPED | CLAP_PARAM_IS_AUTOMATABLE;
+        info->min_value = 1;
+        info->max_value = 32;
+        info->default_value = 1;
+        break;
     }
     return true;
 }
@@ -240,6 +248,10 @@ params_get_value(const clap_plugin_t *plugin, clap_id id, double *value)
       case P_POLYPHONY: *value = hexter_engine_get_polyphony(h->engine); return true;
       case P_MONO_MODE: *value = hexter_engine_get_mono_mode(h->engine); return true;
       case P_PROGRAM:   *value = hexter_engine_get_program(h->engine);   return true;
+      case P_ALGORITHM:
+        *value = hexter_engine_get_voice_parameter(h->engine,
+                                                   HEXTER_VOICE_PARAM_ALGORITHM) + 1;
+        return true;
       default: return false;
     }
 }
@@ -275,6 +287,12 @@ params_value_to_text(const clap_plugin_t *plugin, clap_id id, double value,
         if (v > 127) v = 127;
         hexter_engine_get_program_name(h->engine, v, name);
         snprintf(out, out_size, "%d: %s", v + 1, name);
+        return true;
+      case P_ALGORITHM:
+        v = (int)lrint(value);
+        if (v < 1) v = 1;
+        if (v > 32) v = 32;
+        snprintf(out, out_size, "%d", v);
         return true;
       default:
         return false;
@@ -330,6 +348,11 @@ apply_param_now(hexter_clap_t *h, clap_id id, double value)
       case P_POLYPHONY: hexter_engine_set_polyphony(h->engine, (int)lrint(value)); break;
       case P_MONO_MODE: hexter_engine_set_mono_mode(h->engine, (int)lrint(value)); break;
       case P_PROGRAM:   hexter_engine_select_program(h->engine, (int)lrint(value)); break;
+      case P_ALGORITHM:
+        /* the patch's algorithm, edited live: 1-32 here, 0-31 in the voice data */
+        hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM,
+                                          (int)lrint(value) - 1);
+        break;
       default: break;
     }
 }
@@ -617,6 +640,12 @@ plugin_process(const clap_plugin_t *plugin, const clap_process_t *process)
                 ev.type = HEXTER_EV_PROGRAM_CHANGE;
                 ev.a = (uint8_t)(lrint(p->value) < 0 ? 0 : (lrint(p->value) > 127 ? 127 : lrint(p->value)));
                 h->events[ne++] = ev;
+                break;
+              case P_ALGORITHM:
+                /* applied here rather than queued: it is a patch edit, not a note event,
+                 * and this runs before render takes the voice list */
+                hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM,
+                                                  (int)lrint(p->value) - 1);
                 break;
               default: break;
             }
