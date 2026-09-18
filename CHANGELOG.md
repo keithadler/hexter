@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 2.2.1 (2026-09-17)
+
+### Fixed
+- Windows standalone: "Unable to configure audio: RtApi::getDeviceInfo: deviceId argument
+  not found" on a machine with no microphone, or whose default output failed to probe,
+  reported against 2.1.2 on theabolton/hexter#18. 2.1.1 stopped the engine asking RtAudio
+  about the missing device, but the Windows window still asked for its name and sample
+  rates, and forced the input direction open, before the first window appeared. Every
+  lookup is guarded now: a missing direction shows as "None" in Audio/MIDI Settings, is
+  not opened, and the sample-rate list comes from the device that plays.
 
 ### Added
 - An iPhone and iPad app in `ios/`, the Android app's twin: the engine behind an
