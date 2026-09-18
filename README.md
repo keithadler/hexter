@@ -1,5 +1,9 @@
 # hexter
 
+[![CI](https://github.com/keithadler/hexter/actions/workflows/ci.yml/badge.svg)](https://github.com/keithadler/hexter/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/keithadler/hexter?sort=semver)](https://github.com/keithadler/hexter/releases/latest)
+[![License](https://img.shields.io/github/license/keithadler/hexter)](https://github.com/keithadler/hexter/blob/master/COPYING)
+
 **A Yamaha DX7 modeling software synthesizer.** Six-operator FM, all 32
 algorithms, the real envelope and LFO behaviour of the instrument, loading
 any DX7 bank ever made. Free software since 2004, by Sean Bolton.
