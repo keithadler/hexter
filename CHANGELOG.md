@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.2 (2026-09-18)
+
+### Fixed
+- Windows standalone: the window was a bare title bar, which looked like a failed launch
+  (theabolton/hexter#18 again, after 2.2.1 removed the dialog). That is how clap-wrapper shows a
+  plugin with no GUI, with the settings hidden in the system menu behind the icon. The window
+  now has a body that says the synth is running and where the menu is. The README says so too.
+
 ## Unreleased
 
 ### Added

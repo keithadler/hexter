@@ -37,6 +37,12 @@ output device and sample rate. Plug in a keyboard and play. It has no editor, so
 with MIDI program change, and load a bank by sending a DX7 bulk dump or by setting
 `HEXTER_DEFAULT_BANK` before starting it (see below).
 
+**On Windows the window is small on purpose.** hexter has no controls to show, so the window
+is a short note saying it is running. *Audio/MIDI Settings*, and saving or loading its state,
+are in the menu behind the icon at the top left of the window; right-clicking the title bar
+opens the same menu. Versions before 2.2.2 showed only the title bar, which looked like a
+failed launch and was not one.
+
 **Logic Pro and GarageBand** use the Audio Unit. After copying it, restart
 Logic; it appears under AU Instruments as Keith Adler > hexter. It passes
 Apple's `auval`, the check Logic runs before listing a plugin. The AU is the
