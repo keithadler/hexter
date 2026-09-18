@@ -152,7 +152,7 @@ you play it over MIDI, which is how a real DX7 module works:
 | Parameter | Range | Notes |
 |---|---|---|
 | Program | 1 to 128 | Named from the loaded bank. MIDI program change works too. |
-| Algorithm | 1 to 32 | The patch's operator wiring. See below. |
+| Algorithm | Patch, or 1 to 32 | Forces the patch's operator wiring. See below. |
 | Tuning | 415.3 to 466.2 Hz | A4 |
 | Volume | -70 to +20 dB | |
 | Polyphony | 1 to 64 voices | |
@@ -160,10 +160,13 @@ you play it over MIDI, which is how a real DX7 module works:
 
 **The algorithm knob** is the one on the front panel of the hardware: it picks
 which of the 32 operator wirings the patch uses, and turning it is the fastest
-way to make a familiar patch into something else. Turning it edits the sounding
-patch, and the change is heard on notes you are already holding rather than only
-on the next one. Selecting a program brings back that patch's own algorithm, so
-the knob is an override, not a setting. It automates like any other parameter.
+way to make a familiar patch into something else. It is an override rather than
+a setting: at **Patch**, its resting position, every program plays its own
+algorithm and the knob does nothing. Move it to 1-32 and that wiring is forced,
+which you hear on notes you are already holding rather than only on the next
+one. Move it back to Patch and the patch's own algorithm returns. Selecting a
+program also brings the patch's algorithm back. It automates like any other
+parameter.
 
 **Loading a bank.** In a CLAP host, use the host's preset browser and point
 it at any bank file (hexter implements `clap.preset-load`). In an LV2 host,

@@ -55,6 +55,8 @@ typedef struct {
     const clap_host_preset_load_t *host_preset_load;
 
     hexter_engine_t *engine;
+    int              algorithm;        /* 0 = as the patch says, 1-32 = override */
+    int              algorithm_saved;  /* the patch's own value under an override, else -1 */
     float            sample_rate;
     uint32_t         max_frames;
     float           *mono;            /* scratch, max_frames */
@@ -229,9 +231,9 @@ params_get_info(const clap_plugin_t *plugin, uint32_t index, clap_param_info_t *
       case P_ALGORITHM:
         snprintf(info->name, sizeof(info->name), "Algorithm");
         info->flags = CLAP_PARAM_IS_STEPPED | CLAP_PARAM_IS_AUTOMATABLE;
-        info->min_value = 1;
+        info->min_value = 0;
         info->max_value = 32;
-        info->default_value = 1;
+        info->default_value = 0;
         break;
     }
     return true;
@@ -248,10 +250,7 @@ params_get_value(const clap_plugin_t *plugin, clap_id id, double *value)
       case P_POLYPHONY: *value = hexter_engine_get_polyphony(h->engine); return true;
       case P_MONO_MODE: *value = hexter_engine_get_mono_mode(h->engine); return true;
       case P_PROGRAM:   *value = hexter_engine_get_program(h->engine);   return true;
-      case P_ALGORITHM:
-        *value = hexter_engine_get_voice_parameter(h->engine,
-                                                   HEXTER_VOICE_PARAM_ALGORITHM) + 1;
-        return true;
+      case P_ALGORITHM: *value = h->algorithm;                            return true;
       default: return false;
     }
 }
@@ -290,9 +289,10 @@ params_value_to_text(const clap_plugin_t *plugin, clap_id id, double value,
         return true;
       case P_ALGORITHM:
         v = (int)lrint(value);
-        if (v < 1) v = 1;
+        if (v < 0) v = 0;
         if (v > 32) v = 32;
-        snprintf(out, out_size, "%d", v);
+        if (v == 0) snprintf(out, out_size, "Patch");
+        else        snprintf(out, out_size, "%d", v);
         return true;
       default:
         return false;
@@ -321,6 +321,10 @@ params_text_to_value(const clap_plugin_t *plugin, clap_id id, const char *text,
             return true;
         }
     }
+    if (id == P_ALGORITHM && !strncmp(text, "Patch", 5)) {
+        *value = 0;
+        return true;
+    }
     if (id == P_PROGRAM) {
         /* accept "12: NAME" or "12" as one-based, matching the display */
         char *end;
@@ -338,6 +342,34 @@ params_text_to_value(const clap_plugin_t *plugin, clap_id id, const char *text,
     }
 }
 
+/*
+ * The algorithm knob is an override, not a patch byte: the plugin keeps the value so a
+ * host always reads back what it set, and only the engine's copy comes and goes. Moving
+ * off "Patch" remembers what the patch said; moving back puts it there again, unless a
+ * program change has already replaced it, in which case there is nothing to undo.
+ */
+static void
+apply_algorithm(hexter_clap_t *h, int value)
+{
+    if (value < 0) value = 0;
+    if (value > 32) value = 32;
+    if (value == h->algorithm) return;
+
+    if (value > 0) {
+        if (h->algorithm_saved < 0)
+            h->algorithm_saved = hexter_engine_get_voice_parameter(h->engine,
+                                                                   HEXTER_VOICE_PARAM_ALGORITHM);
+        hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM, value - 1);
+    } else if (h->algorithm_saved >= 0) {
+        if (hexter_engine_get_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM)
+                == h->algorithm - 1)
+            hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM,
+                                              h->algorithm_saved);
+        h->algorithm_saved = -1;
+    }
+    h->algorithm = value;
+}
+
 /* apply a parameter change now (main thread, or audio thread outside render) */
 static void
 apply_param_now(hexter_clap_t *h, clap_id id, double value)
@@ -348,11 +380,7 @@ apply_param_now(hexter_clap_t *h, clap_id id, double value)
       case P_POLYPHONY: hexter_engine_set_polyphony(h->engine, (int)lrint(value)); break;
       case P_MONO_MODE: hexter_engine_set_mono_mode(h->engine, (int)lrint(value)); break;
       case P_PROGRAM:   hexter_engine_select_program(h->engine, (int)lrint(value)); break;
-      case P_ALGORITHM:
-        /* the patch's algorithm, edited live: 1-32 here, 0-31 in the voice data */
-        hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM,
-                                          (int)lrint(value) - 1);
-        break;
+      case P_ALGORITHM: apply_algorithm(h, (int)lrint(value)); break;
       default: break;
     }
 }
@@ -384,15 +412,40 @@ static const clap_plugin_params_t ext_params = {
 
 /* ---- state ---- */
 
+/*
+ * The engine writes a fixed-size block and its loader ignores anything after it, so the
+ * plugin's own settings ride along in a trailer. A state written before the algorithm
+ * knob existed simply has no trailer, and loads with the knob at "Patch".
+ */
+#define TRAILER_MAGIC "HXA1"
+#define TRAILER_SIZE  12
+
+static void put_i32(uint8_t *p, int32_t v)
+{
+    p[0] = (uint8_t)(v & 0xff);       p[1] = (uint8_t)((v >> 8) & 0xff);
+    p[2] = (uint8_t)((v >> 16) & 0xff); p[3] = (uint8_t)((v >> 24) & 0xff);
+}
+
+static int32_t get_i32(const uint8_t *p)
+{
+    return (int32_t)((uint32_t)p[0] | ((uint32_t)p[1] << 8) |
+                     ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24));
+}
+
 static bool
 state_save(const clap_plugin_t *plugin, const clap_ostream_t *stream)
 {
     hexter_clap_t *h = (hexter_clap_t *)plugin->plugin_data;
-    uint8_t buf[HEXTER_STATE_SIZE];
-    size_t n = hexter_engine_state_save(h->engine, buf, sizeof(buf));
+    uint8_t buf[HEXTER_STATE_SIZE + TRAILER_SIZE];
+    size_t n = hexter_engine_state_save(h->engine, buf, HEXTER_STATE_SIZE);
     size_t done = 0;
 
     if (!n) return false;
+    memcpy(buf + n, TRAILER_MAGIC, 4);
+    put_i32(buf + n + 4, (int32_t)h->algorithm);
+    put_i32(buf + n + 8, (int32_t)h->algorithm_saved);
+    n += TRAILER_SIZE;
+
     while (done < n) {
         int64_t w = stream->write(stream, buf + done, n - done);
         if (w <= 0) return false;
@@ -405,7 +458,7 @@ static bool
 state_load(const clap_plugin_t *plugin, const clap_istream_t *stream)
 {
     hexter_clap_t *h = (hexter_clap_t *)plugin->plugin_data;
-    uint8_t buf[HEXTER_STATE_SIZE];
+    uint8_t buf[HEXTER_STATE_SIZE + TRAILER_SIZE];
     size_t done = 0;
 
     while (done < sizeof(buf)) {
@@ -418,6 +471,17 @@ state_load(const clap_plugin_t *plugin, const clap_istream_t *stream)
         log_msg(h, CLAP_LOG_WARNING, "state did not load: not a hexter state block");
         return false;
     }
+
+    h->algorithm = 0;
+    h->algorithm_saved = -1;
+    if (done >= HEXTER_STATE_SIZE + TRAILER_SIZE &&
+        !memcmp(buf + HEXTER_STATE_SIZE, TRAILER_MAGIC, 4)) {
+        int32_t a = get_i32(buf + HEXTER_STATE_SIZE + 4);
+        int32_t s = get_i32(buf + HEXTER_STATE_SIZE + 8);
+        if (a >= 0 && a <= 32) h->algorithm = a;
+        if (s >= -1 && s <= 31) h->algorithm_saved = s;
+    }
+
     h->last_program = hexter_engine_get_program(h->engine);
     h->rescan_requested = true;
     h->host->request_callback(h->host);
@@ -644,8 +708,7 @@ plugin_process(const clap_plugin_t *plugin, const clap_process_t *process)
               case P_ALGORITHM:
                 /* applied here rather than queued: it is a patch edit, not a note event,
                  * and this runs before render takes the voice list */
-                hexter_engine_set_voice_parameter(h->engine, HEXTER_VOICE_PARAM_ALGORITHM,
-                                                  (int)lrint(p->value) - 1);
+                apply_algorithm(h, (int)lrint(p->value));
                 break;
               default: break;
             }
@@ -741,6 +804,8 @@ create_plugin(const clap_host_t *host)
     if (!h) return NULL;
 
     h->host = host;
+    h->algorithm = 0;          /* "Patch": the knob starts out of the way */
+    h->algorithm_saved = -1;
     h->plugin.desc = &hexter_desc;
     h->plugin.plugin_data = h;
     h->plugin.init = plugin_init;

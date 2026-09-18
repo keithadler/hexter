@@ -264,13 +264,18 @@ main(int argc, char **argv)
         {
             clap_param_info_t info;
             CHECK(params->get_info(p, 5, &info) && !strcmp(info.name, "Algorithm"), "param 5 is Algorithm");
-            CHECK(info.min_value == 1 && info.max_value == 32, "algorithm range %f-%f",
+            CHECK(info.min_value == 0 && info.max_value == 32, "algorithm range %f-%f",
                   info.min_value, info.max_value);
-            CHECK(params->get_value(p, 5, &v) && v >= 1 && v <= 32, "algorithm value in range (%f)", v);
+            CHECK(info.default_value == 0, "algorithm defaults to Patch (%f)", info.default_value);
+            CHECK(params->get_value(p, 5, &v) && v == 0, "algorithm starts at Patch (%f)", v);
+            CHECK(params->value_to_text(p, 5, 0, text, sizeof(text)) && !strcmp(text, "Patch"),
+                  "algorithm 0 reads Patch (%s)", text);
             CHECK(params->value_to_text(p, 5, 17, text, sizeof(text)) && !strcmp(text, "17"),
                   "algorithm text (%s)", text);
             CHECK(params->text_to_value(p, 5, "17", &v) && fabs(v - 17.0) < 1e-9,
                   "algorithm text to value %f", v);
+            CHECK(params->text_to_value(p, 5, "Patch", &v) && v == 0,
+                  "algorithm Patch to value %f", v);
         }
     }
 
@@ -359,17 +364,30 @@ main(int argc, char **argv)
         membuf_t m = { NULL, 0, 0, 0 };
         clap_ostream_t os = { &m, mem_write };
         clap_istream_t is = { &m, mem_read };
-        double before, after;
+        double before, after, alg_before, alg_after;
         params->get_value(p, 4, &before);
+
+        /* put the algorithm knob somewhere it can be seen to come back */
+        in_param(&in, 0, 5, 19);
+        process_blocks(p, &in, &out, 1, NULL);
+        params->get_value(p, 5, &alg_before);
+        CHECK(fabs(alg_before - 19.0) < 1e-9, "algorithm set to 19 (%f)", alg_before);
+
         CHECK(state->save(p, &os), "state save");
-        CHECK(m.size == 16800, "state size %zu", m.size);
+        CHECK(m.size == 16800 + 12, "state size %zu", m.size);   /* engine block plus our trailer */
         in_param(&in, 0, 4, 0);
+        in_param(&in, 0, 5, 0);
         process_blocks(p, &in, &out, 1, NULL);
         params->get_value(p, 4, &v);
         CHECK(fabs(v) < 1e-9, "program reset before load");
+        params->get_value(p, 5, &v);
+        CHECK(fabs(v) < 1e-9, "algorithm reset before load");
         CHECK(state->load(p, &is), "state load");
         params->get_value(p, 4, &after);
+        params->get_value(p, 5, &alg_after);
         CHECK(fabs(after - before) < 1e-9, "program restored by state (%f vs %f)", after, before);
+        CHECK(fabs(alg_after - alg_before) < 1e-9, "algorithm restored by state (%f vs %f)",
+              alg_after, alg_before);
         CHECK(params->value_to_text(p, 4, 0, text, sizeof(text)) && strstr(text, "SYSX"), "bank restored by state (%s)", text);
         m.pos = 0; m.data[0] = 'Z';
         CHECK(!state->load(p, &is), "corrupt state refused");
