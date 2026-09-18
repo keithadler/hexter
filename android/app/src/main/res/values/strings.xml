@@ -1,9 +1,17 @@
 <resources>
     <string name="app_name">hexter</string>
     <string name="open_bank">Open bank…</string>
+    <string name="bluetooth">Bluetooth MIDI</string>
     <string name="no_midi">Looking for MIDI devices…</string>
     <string name="no_audio">Could not open an audio stream.</string>
     <string name="bank_loaded">%1$s: %2$d voices, %3$d Hz</string>
     <string name="bank_failed">Could not read %1$s as a DX7 bank.</string>
     <string name="volume">Vol</string>
+    <string name="bt_searching">Searching for Bluetooth MIDI keyboards…</string>
+    <string name="bt_found">Bluetooth MIDI keyboards</string>
+    <string name="bt_unavailable">This device has no Bluetooth LE.</string>
+    <string name="bt_off">Turn on Bluetooth, then try again.</string>
+    <string name="bt_scan_failed">Bluetooth scan failed (%1$d).</string>
+    <string name="bt_connect_failed">Could not connect to that keyboard.</string>
+    <string name="bt_denied">hexter needs that permission to find Bluetooth keyboards.</string>
 </resources>

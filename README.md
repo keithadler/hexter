@@ -88,7 +88,8 @@ its icon, tap **Uninstall**), then install the new one. Your own bank files are 
 app, so nothing is lost.
 
 **What it needs.** Android 8.0 or newer on a 64-bit device, which is every phone sold in the
-last several years. Bluetooth MIDI is not supported yet; USB is.
+last several years. A USB keyboard needs no setup. For a Bluetooth MIDI keyboard, tap
+**Bluetooth MIDI**, allow the permission Android asks for, and pick the keyboard from the list.
 
 ## iPhone and iPad
 

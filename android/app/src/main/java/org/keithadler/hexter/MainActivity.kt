@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
     private lateinit var engine: HexterEngine
     private lateinit var midi: MidiInput
+    private lateinit var bluetooth: BluetoothMidi
     private lateinit var status: TextView
     private lateinit var programs: ListView
     private val ui = Handler(Looper.getMainLooper())
@@ -26,6 +27,10 @@ class MainActivity : AppCompatActivity() {
         val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@registerForActivityResult
         val name = uri.lastPathSegment?.substringAfterLast('/') ?: "bank.syx"
         showBank(engine.loadBank(bytes, name), name)
+    }
+
+    private val askBluetooth = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+        if (grants.values.all { it }) bluetooth.show() else Toast.makeText(this, R.string.bt_denied, Toast.LENGTH_LONG).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +67,8 @@ class MainActivity : AppCompatActivity() {
 
         midi = MidiInput(this, engine) { text -> ui.post { findViewById<TextView>(R.id.midiStatus).text = text } }
         midi.start()
+        bluetooth = BluetoothMidi(this) { askBluetooth.launch(it) }
+        findViewById<Button>(R.id.bluetooth).setOnClickListener { bluetooth.show() }
 
         val roms = banks.indexOfFirst { it.startsWith("dx7_roms") }
         if (roms >= 0) bankSpinner.setSelection(roms) else if (banks.isNotEmpty()) bankSpinner.setSelection(0)
@@ -86,6 +93,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         ui.removeCallbacks(meter)
+        if (::bluetooth.isInitialized) bluetooth.stop()
         if (::midi.isInitialized) midi.stop()
         engine.stop()
         super.onDestroy()
