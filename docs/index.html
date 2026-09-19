@@ -203,9 +203,23 @@ DX7, TX7, TX816 and TX802 banks load as they are. DX7II and DX7s banks load with
 base voice; the II's extras live in a separate data block that hexter ignores. DX1 and
 DX5 banks load as they are, each half being a DX7 voice.</p>
 
-<p>The four-operator machines are a different synth with different algorithms, so
-DX100, DX27, DX21, DX11, TX81Z, FB-01 and reface DX banks do not load. The FB-01 banks
-that ship with hexter are conversions, not the originals.</p>
+<p>The <strong>four-operator</strong> machines are a different synth, with four
+operators instead of six and their own eight algorithms. hexter reads their 32-voice
+dumps anyway and converts each voice: the four operators take four of the six, wired
+with whichever DX7 algorithm stands closest, and the other two stay silent. Envelopes,
+ratios, detune, feedback, the LFO and the name come across. That covers DX21, DX27 and
+DX100, and TX81Z banks as well.</p>
+
+<div class="note">
+  <p><strong>A converted voice is a sound-alike, not the hardware.</strong> Their
+  envelopes have a stage the DX7 does not, their pitch modulation reaches further for the
+  same number, and the TX81Z's operator waveforms have nowhere to go. It is a way to play
+  those banks, not a way to hear those machines. The TX81Z part in particular is built
+  from the format rather than from a real dump, and has not been tried against hardware.</p>
+</div>
+
+<p>Still out of reach: the DX11, FB-01 and reface DX. The FB-01 banks that ship with
+hexter are conversions, not the originals.</p>
 
 <footer>
   <p>
