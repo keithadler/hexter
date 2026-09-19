@@ -10,6 +10,7 @@
 		0129FB87399D4E6034FA52F2 /* tx7_roms.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = E0382FCB2AE1B2FFB5C061B6 /* tx7_roms.dx7 */; };
 		27929F441C8516D29300C642 /* dx7_voice_tables.c in Sources */ = {isa = PBXBuildFile; fileRef = FBD01985162C49A2B685012A /* dx7_voice_tables.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
 		45285EF1F6F949C2202F52EF /* HexterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F27EB0A2BAA7A09B9AA1273B /* HexterApp.swift */; };
+		4AFA57C02D0B36158653A86B /* dx7_voice_4op.c in Sources */ = {isa = PBXBuildFile; fileRef = 56439DA0D4C6E1E791B602AF /* dx7_voice_4op.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
 		4D5EDEE02DD22278D60716ED /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF7F78E4841C5774C3717E62 /* Assets.xcassets */; };
 		5249B7A7010DF8AAC3223575 /* dx7_bank.c in Sources */ = {isa = PBXBuildFile; fileRef = 153C925540EA071FE51C9FFB /* dx7_bank.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
 		5879C833A0AC1E3B672EDDF5 /* dx7_voice.c in Sources */ = {isa = PBXBuildFile; fileRef = E5F09903F79E1C19658E37B6 /* dx7_voice.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
@@ -45,9 +46,11 @@
 		39A0788F2BF7BA5B61FF520C /* dx7_roms.dx7 */ = {isa = PBXFileReference; path = dx7_roms.dx7; sourceTree = "<group>"; };
 		3DFA85C7026B70A91DC9ADEE /* gui_data.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_data.h; sourceTree = "<group>"; };
 		409100CCFBAB002832D6071E /* dx7_voice_data.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_voice_data.h; sourceTree = "<group>"; };
+		56439DA0D4C6E1E791B602AF /* dx7_voice_4op.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_4op.c; sourceTree = "<group>"; };
 		5ACF1EB18179527B1A509A38 /* gui_patch_edit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_patch_edit.h; sourceTree = "<group>"; };
 		5F1E4960C17C97169FD173EB /* hexter_bridge.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hexter_bridge.c; sourceTree = "<group>"; };
 		72EAD61194614A2BCABA9749 /* dx7_voice_render.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_render.c; sourceTree = "<group>"; };
+		73B330E2105F0AB1D2C2D48B /* dx7_voice_4op.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_voice_4op.h; sourceTree = "<group>"; };
 		80233C03DA12C37DE2A1B8E5 /* hexter_bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_bridge.h; sourceTree = "<group>"; };
 		809BF7567C08DBA101E288BE /* gui_main.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_main.h; sourceTree = "<group>"; };
 		8E1D6ECD6DFE70F3297BA0CE /* hexter_engine.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hexter_engine.c; sourceTree = "<group>"; };
@@ -89,6 +92,8 @@
 			children = (
 				153C925540EA071FE51C9FFB /* dx7_bank.c */,
 				D684236CE4B1A311A639785C /* dx7_bank.h */,
+				56439DA0D4C6E1E791B602AF /* dx7_voice_4op.c */,
+				73B330E2105F0AB1D2C2D48B /* dx7_voice_4op.h */,
 				197509265D223ED370CF1B4F /* dx7_voice_data.c */,
 				409100CCFBAB002832D6071E /* dx7_voice_data.h */,
 				991EEEA5F9F39E1B822D9EC3 /* dx7_voice_patches.c */,
@@ -256,6 +261,7 @@
 				9FFE08841F7229F578C01DEE /* MIDIInput.swift in Sources */,
 				5249B7A7010DF8AAC3223575 /* dx7_bank.c in Sources */,
 				5879C833A0AC1E3B672EDDF5 /* dx7_voice.c in Sources */,
+				4AFA57C02D0B36158653A86B /* dx7_voice_4op.c in Sources */,
 				9A513D82FB616EC8582E3226 /* dx7_voice_data.c in Sources */,
 				E598180FE637C90F0BC1674D /* dx7_voice_patches.c in Sources */,
 				82C35BFE405ED39056491B94 /* dx7_voice_render.c in Sources */,
