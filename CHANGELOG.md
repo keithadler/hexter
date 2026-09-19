@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.4.0 (2026-09-19)
 
 ### Added
 - **DX21, DX27 and DX100 banks load.** A four-operator 32-voice dump is recognized and each
