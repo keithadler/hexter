@@ -21,6 +21,7 @@ editor still build on Linux when their libraries are installed.
 | iPhone and iPad | the same app for iOS, in `ios/`; Apple does not allow a download, so you build it yourself with Xcode (see below) |
 | Platforms | Linux (x86_64 and arm64), macOS (Apple silicon and Intel), Windows (x64 and arm64), Android (8.0 or newer, 64-bit), iOS (16 or newer, built with Xcode) |
 | Banks | `.syx`, `.dx7`, `.mid` (sysex inside a MIDI file), `.tx7`, `.snd`, `.bnk`, `.dx2`, raw packed voices |
+| Four-operator banks | DX21, DX27, DX100 and the TX81Z's base voices load too, converted. See below |
 | Sysex | DX7 single voice, 32-voice bulk dump, voice and function parameter changes |
 | License | GPL-2.0-or-later |
 
@@ -179,6 +180,24 @@ set the *Bank file* property. Either way you can also send the bank as a
 the environment variable `HEXTER_DEFAULT_BANK` to a file that loads on
 every instance. Six banks ship in `banks/`, including the original DX7
 ROM cartridges.
+
+**Which Yamahas it understands.** hexter models the six-operator engine, so
+anything from that family loads as it is: DX7, TX7, TX816, TX802, and each half
+of a DX1 or DX5. DX7II and DX7s banks load with their base voice; the II's
+extras live in a separate data block that hexter ignores.
+
+The **four-operator** machines are a different synth, with four operators
+instead of six and their own eight algorithms. hexter reads their 32-voice
+dumps anyway, DX21, DX27, DX100, and the TX81Z's base voices, and converts each
+one: the four operators become four of the six, wired with whichever DX7
+algorithm stands closest, and the other two stay silent. Envelopes, ratios,
+detune, feedback, the LFO and the name come across.
+
+Treat that as a **sound-alike rather than the real thing**. Their envelopes have
+a stage the DX7 does not, their pitch modulation reaches further for the same
+number, and the TX81Z's operator waveforms have nowhere to go. It is a way to
+play those banks, not a way to hear that hardware. The voice layout and the
+algorithm mapping follow [XDX](https://github.com/wurly200a/xdx), MIT licensed.
 
 **Editing.** Send DX7 parameter-change sysex (from a hardware DX7, a
 librarian, or an editor such as Dexed) and hexter follows, including

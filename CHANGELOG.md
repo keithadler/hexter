@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **DX21, DX27 and DX100 banks load.** A four-operator 32-voice dump is recognized and each
+  voice is converted to a six-operator one on the way in: the four operators become four of
+  the six, wired up with whichever DX7 algorithm stands closest to the four-operator one, and
+  the other two operators stay silent. Envelopes, frequency ratios, detune, feedback, the LFO
+  and the name come across.
+
+  This is a **sound-alike, not the real thing**. The four-operator machines are a different
+  synth, so a converted voice is an interpretation: their envelopes have a stage the DX7 does
+  not, their pitch modulation reaches further for the same number, and the TX81Z's operator
+  waveforms have nowhere to go. Play them, do not expect your hardware.
+
+  The voice memory layout and the algorithm mapping follow [XDX](https://github.com/wurly200a/xdx)
+  by Wurly, MIT licensed, which Reaper10 found. See AUTHORS. Asked for on theabolton/hexter#18.
+
 ## 2.3.0 (2026-09-18)
 
 ### Added

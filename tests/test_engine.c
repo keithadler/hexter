@@ -458,6 +458,123 @@ test_algorithm(void)
     hexter_engine_free(e2);
 }
 
+/* ---- four-operator banks ---- */
+
+/* Build a DX21/DX27/DX100 32-voice dump with known values in it. */
+static size_t
+build_4op_dump(uint8_t *out, size_t cap)
+{
+    static const char *names[2] = { "FOUR OP 1 ", "FOUR OP 2 " };
+    size_t n = 0;
+    int v, i;
+    unsigned sum = 0;
+
+    if (cap < 6 + 4096 + 2) return 0;
+    out[n++] = 0xf0; out[n++] = 0x43; out[n++] = 0x00;
+    out[n++] = 0x03;                       /* four-operator bulk */
+    out[n++] = 0x20; out[n++] = 0x00;      /* 4096 bytes follow */
+
+    memset(out + n, 0, 4096);
+    for (v = 0; v < 32; v++) {
+        uint8_t *p = out + n + v * 128;
+        /* operators are stored OP4, OP2, OP3, OP1 */
+        static const int at[4] = { 30, 10, 20, 0 };   /* OP1, OP2, OP3, OP4 */
+        for (i = 0; i < 4; i++) {
+            uint8_t *o = p + at[i];
+            o[0] = 31;                      /* attack rate, the maximum */
+            o[3] = 10;                      /* release rate */
+            o[4] = 15;                      /* decay 1 level, no decay */
+            o[7] = (uint8_t)(90 - i * 10);  /* output level, distinct per operator */
+            o[8] = 4;                       /* frequency ratio 1.00 */
+            o[9] = 3;                       /* detune centered */
+        }
+        p[40] = (uint8_t)(1 | (5 << 3));    /* algorithm 2 (index 1), feedback 5 */
+        p[41] = 33;                         /* LFO speed */
+        p[45] = 2;                          /* LFO wave: triangle */
+        p[46] = 24;                         /* transpose, centered */
+        memcpy(p + 57, names[v & 1], 10);
+        p[67] = p[68] = p[69] = 99;         /* pitch envelope at rest */
+        p[70] = p[71] = p[72] = 50;
+    }
+    for (i = 0; i < 4096; i++) sum += out[n + i];
+    n += 4096;
+    out[n++] = (uint8_t)((~sum + 1) & 0x7f);
+    out[n++] = 0xf7;
+    return n;
+}
+
+static void
+test_4op_bank(void)
+{
+    hexter_engine_t *e = hexter_engine_new(44100.0f);
+    static uint8_t dump[6 + 4096 + 2];
+    uint8_t cur[155];
+    char name[11];
+    char *err = NULL;
+    size_t len;
+    int n;
+
+    len = build_4op_dump(dump, sizeof(dump));
+    CHECK(len == 6 + 4096 + 2, "built a %zu byte four-operator dump", len);
+
+    n = hexter_engine_load_bank_memory(e, dump, len, "dx100.syx", 0, &err);
+    CHECK(n == 32, "four-operator dump loaded %d voices (%s)", n, err ? err : "no error");
+    free(err); err = NULL;
+
+    hexter_engine_get_program_name(e, 0, name);
+    CHECK(!strcmp(name, "FOUR OP 1 "), "voice 1 is named '%s'", name);
+    hexter_engine_get_program_name(e, 1, name);
+    CHECK(!strcmp(name, "FOUR OP 2 "), "voice 2 is named '%s'", name);
+
+    hexter_engine_select_program(e, 0);
+    hexter_engine_get_current_patch(e, cur);
+
+    /* four-operator algorithm 2 stands in as DX7 algorithm 14, stored as 13 */
+    CHECK(cur[134] == 13, "algorithm 2 became DX7 algorithm %d", cur[134] + 1);
+    CHECK(cur[135] == 5, "feedback carried across as %d", cur[135]);
+
+    /* For that algorithm the operators land on DX7 4, 5, 3, 6. The unpacked
+     * voice stores OP6 first, so operator k starts at (6 - k) * 21. Each
+     * four-operator operator was given its own output level, so this checks
+     * the routing rather than just that something arrived. */
+    CHECK(cur[(6 - 4) * 21 + 16] == 90, "OP1 became DX7 OP4 (level %d)", cur[(6 - 4) * 21 + 16]);
+    CHECK(cur[(6 - 5) * 21 + 16] == 80, "OP2 became DX7 OP5 (level %d)", cur[(6 - 5) * 21 + 16]);
+    CHECK(cur[(6 - 3) * 21 + 16] == 70, "OP3 became DX7 OP3 (level %d)", cur[(6 - 3) * 21 + 16]);
+    CHECK(cur[(6 - 6) * 21 + 16] == 60, "OP4 became DX7 OP6 (level %d)", cur[(6 - 6) * 21 + 16]);
+    /* the two operators with nowhere to come from stay silent */
+    CHECK(cur[(6 - 1) * 21 + 16] == 0 && cur[(6 - 2) * 21 + 16] == 0,
+          "the spare operators are silent");
+
+    /* ratio 1.00 is coarse 1, fine 0; detune 3 centers on the DX7's 7 */
+    CHECK(cur[(6 - 4) * 21 + 18] == 1 && cur[(6 - 4) * 21 + 19] == 0,
+          "frequency ratio 1.00 became coarse %d fine %d",
+          cur[(6 - 4) * 21 + 18], cur[(6 - 4) * 21 + 19]);
+    CHECK(cur[(6 - 4) * 21 + 20] == 7, "centered detune became %d", cur[(6 - 4) * 21 + 20]);
+
+    /* the envelope reaches the top and holds there */
+    CHECK(cur[(6 - 4) * 21 + 0] == 99, "maximum attack rate became %d", cur[(6 - 4) * 21 + 0]);
+    CHECK(cur[(6 - 4) * 21 + 5] == 99, "no-decay sustain became %d", cur[(6 - 4) * 21 + 5]);
+
+    CHECK(cur[142] == 0, "triangle LFO became wave %d", cur[142]);
+    CHECK(cur[137] == 33, "LFO speed carried across as %d", cur[137]);
+
+    /* and it makes a sound */
+    {
+        static float out[4410];
+        hexter_event_t note;
+        double peak = 0.0;
+        int i;
+
+        memset(&note, 0, sizeof(note));
+        note.type = HEXTER_EV_NOTE_ON; note.a = 60; note.b = 100;
+        render_seconds(e, out, 4410, &note, 1);
+        for (i = 0; i < 4410; i++) if (fabs(out[i]) > peak) peak = fabs(out[i]);
+        CHECK(peak > 0.01, "a converted voice makes a sound (peak %.4f)", peak);
+    }
+
+    hexter_engine_free(e);
+}
+
 /* ---- state ---- */
 
 static void
@@ -638,6 +755,7 @@ main(int argc, char **argv)
     test_determinism_and_rom();
     test_sysex();
     test_algorithm();
+    test_4op_bank();
     test_state();
     test_voices();
     test_sample_rates();

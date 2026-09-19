@@ -27,6 +27,7 @@
 
 #include "hexter_types.h"
 #include "dx7_voice.h"
+#include "dx7_voice_4op.h"
 #include "dx7_voice_data.h"
 #include "dx7_bank.h"
 
@@ -107,6 +108,31 @@ dx7_patchbank_parse(uint8_t *raw_patch_data, long filelength,
             memmove(raw_patch_data + count * DX7_VOICE_SIZE_PACKED,
                     raw_patch_data + patchstart + 6 + midshift, 4096);
             count += 32;
+            patchstart += (DX7_DUMP_SIZE_VOICE_BULK - 1);
+
+        } else if (raw_patch_data[patchstart] == 0xf0 &&
+                   raw_patch_data[patchstart + 1 + midshift] == 0x43 &&
+                   raw_patch_data[patchstart + 2 + midshift] <= 0x0f &&
+                   raw_patch_data[patchstart + 3 + midshift] == 0x03 &&
+                   raw_patch_data[patchstart + 4 + midshift] == 0x20 &&
+                   raw_patch_data[patchstart + 5 + midshift] == 0x00 &&
+                   patchstart + 4103 + midshift < filelength &&
+                   raw_patch_data[patchstart + 4103 + midshift] == 0xf7) {
+            /* DX21 / DX27 / DX100 32 voice dump: same framing as the DX7's,
+             * format 0x03 rather than 0x09, and four operators per voice
+             * instead of six. Convert each one on the way in. */
+            const uint8_t *src = raw_patch_data + patchstart + 6 + midshift;
+
+            for (i = 0; i < DX_4OP_DUMP_VOICES; i++) {
+                uint8_t unpacked[DX7_VOICE_SIZE_UNPACKED];
+                uint8_t buf[DX7_VOICE_SIZE_PACKED];   /* dx7_patch_pack() must not overlap */
+
+                dx_4op_voice_to_dx7(src + i * DX_4OP_VOICE_SIZE_PACKED, unpacked);
+                dx7_patch_pack(unpacked, (dx7_patch_t *)buf, 0);
+                memcpy(raw_patch_data + (count + i) * DX7_VOICE_SIZE_PACKED,
+                       buf, DX7_VOICE_SIZE_PACKED);
+            }
+            count += DX_4OP_DUMP_VOICES;
             patchstart += (DX7_DUMP_SIZE_VOICE_BULK - 1);
 
         } else if (raw_patch_data[patchstart] == 0xf0 &&

@@ -34,6 +34,7 @@ targets:
           - dx7_voice_tables.c
           - hexter_synth.c
           - dx7_bank.c
+          - dx7_voice_4op.c
           - hexter_engine.c
           - "*.h"
         compilerFlags: "-O2 -ffp-contract=off -Wno-shorten-64-to-32"

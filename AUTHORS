@@ -74,5 +74,11 @@ by a large number of DX7 and synthesis enthusiasts, including:
     - Members of the Linux Audio Developers list, for much wisdom
         regarding digital audio and synthesis.
 
+    - Wurly, whose XDX (https://github.com/wurly200a/xdx, MIT licensed,
+        Copyright (c) 2020 Wurly) documented the four-operator voice memory
+        and worked out which six-operator algorithm stands in for each
+        four-operator one. hexter's DX21/DX27/DX100 support follows it.
+        Found for us by Reaper10.
+
 Thanks everybody!  Ain't open source great?
 
