@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.5.0 (2026-09-19)
 
 ### Added
 - The Linux standalone speaks **JACK** as well as ALSA and PulseAudio. It always could in
