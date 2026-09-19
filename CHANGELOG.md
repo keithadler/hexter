@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- The Linux standalone speaks **JACK** as well as ALSA and PulseAudio. It always could in
+  principle, since the audio layer compiles in whatever backends it finds, but the build
+  machines had no JACK development package, so every Linux release so far shipped without
+  it and nothing said so. The package is installed now, and both workflows fail if the
+  built standalone turns out to be missing a backend, so it cannot go quiet again.
+
 ## 2.4.1 (2026-09-19)
 
 ### Fixed

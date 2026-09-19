@@ -41,11 +41,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Linux dependencies (ALSA and X11, for the standalone's audio, MIDI and window)
+      - name: Install Linux dependencies (ALSA, JACK and X11, for the standalone's audio, MIDI and window)
         if: matrix.family == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev libx11-dev
+          # RtAudio compiles in whichever backends it finds, so JACK has to be here at
+          # build time or the standalone ships without it and nobody notices.
+          sudo apt-get install -y libasound2-dev libjack-jackd2-dev libx11-dev
+
+      - name: Check the standalone really got JACK and ALSA
+        if: matrix.family == 'linux'
+        run: |
+          B=build/wrapped/hexter
+          for api in jack_client_open snd_pcm_open; do
+            if ! grep -qa "$api" "$B"; then
+              echo "::error::the standalone was built without $api; an audio backend is missing"
+              exit 1
+            fi
+          done
+          echo "standalone carries both JACK and ALSA"
 
       # MSVC, because clap-wrapper's Windows standalone shell is C++/WinRT. The C runtime is
       # linked statically (CMakeLists.txt), so the zip needs no redistributable.

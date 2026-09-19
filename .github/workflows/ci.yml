@@ -43,7 +43,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y dssi-dev liblo-dev libgtk2.0-dev libasound2-dev lv2-dev liblilv-dev lilv-utils libx11-dev
+          sudo apt-get install -y dssi-dev liblo-dev libgtk2.0-dev libasound2-dev libjack-jackd2-dev lv2-dev liblilv-dev lilv-utils libx11-dev
 
       - name: Set up the MSVC environment
         if: matrix.toolchain == 'msvc'
@@ -70,6 +70,18 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+      - name: Check the standalone really got JACK and ALSA
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          B=build/wrapped/hexter
+          for api in jack_client_open snd_pcm_open; do
+            if ! grep -qa "$api" "$B"; then
+              echo "::error::the standalone was built without $api; an audio backend is missing"
+              exit 1
+            fi
+          done
+          echo "standalone carries both JACK and ALSA"
 
       - name: Check the LV2 bundle with lilv-utils
         if: matrix.os == 'ubuntu-latest'
