@@ -188,7 +188,7 @@ extras live in a separate data block that hexter ignores.
 
 The **four-operator** machines are a different synth, with four operators
 instead of six and their own eight algorithms. hexter reads their 32-voice
-dumps anyway, DX21, DX27, DX100, and the TX81Z's base voices, and converts each
+dumps anyway, DX21, DX27 and DX100, and converts each
 one: the four operators become four of the six, wired with whichever DX7
 algorithm stands closest, and the other two stay silent. Envelopes, ratios,
 detune, feedback, the LFO and the name come across.
@@ -198,6 +198,12 @@ a stage the DX7 does not, their pitch modulation reaches further for the same
 number, and the TX81Z's operator waveforms have nowhere to go. It is a way to
 play those banks, not a way to hear that hardware. The voice layout and the
 algorithm mapping follow [XDX](https://github.com/wurly200a/xdx), MIT licensed.
+
+A **TX81Z** bank is the same dump under a different format byte, and its voices
+are laid out the same way in the bytes hexter reads, so those load too and its
+extras, the operator waveforms above all, are ignored. That part is built from
+the format rather than from a real dump: nobody has tried it against hardware
+yet. If you own one, send a bank and say what comes out wrong.
 
 **Editing.** Send DX7 parameter-change sysex (from a hardware DX7, a
 librarian, or an editor such as Dexed) and hexter follows, including

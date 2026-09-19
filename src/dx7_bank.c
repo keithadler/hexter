@@ -113,14 +113,18 @@ dx7_patchbank_parse(uint8_t *raw_patch_data, long filelength,
         } else if (raw_patch_data[patchstart] == 0xf0 &&
                    raw_patch_data[patchstart + 1 + midshift] == 0x43 &&
                    raw_patch_data[patchstart + 2 + midshift] <= 0x0f &&
-                   raw_patch_data[patchstart + 3 + midshift] == 0x03 &&
+                   (raw_patch_data[patchstart + 3 + midshift] == 0x03 ||
+                    raw_patch_data[patchstart + 3 + midshift] == 0x04) &&
                    raw_patch_data[patchstart + 4 + midshift] == 0x20 &&
                    raw_patch_data[patchstart + 5 + midshift] == 0x00 &&
                    patchstart + 4103 + midshift < filelength &&
                    raw_patch_data[patchstart + 4103 + midshift] == 0xf7) {
-            /* DX21 / DX27 / DX100 32 voice dump: same framing as the DX7's,
-             * format 0x03 rather than 0x09, and four operators per voice
-             * instead of six. Convert each one on the way in. */
+            /* A four-operator 32 voice dump: same framing as the DX7's, with
+             * format 0x03 (DX21, DX27, DX100) or 0x04 (TX81Z) rather than 0x09,
+             * and four operators per voice instead of six. Both lay the voice
+             * out the same way in the bytes we read; the TX81Z's extras live
+             * past them and in a separate dump, and are ignored. Convert each
+             * voice on the way in. */
             const uint8_t *src = raw_patch_data + patchstart + 6 + midshift;
 
             for (i = 0; i < DX_4OP_DUMP_VOICES; i++) {

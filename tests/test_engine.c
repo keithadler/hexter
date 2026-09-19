@@ -462,7 +462,7 @@ test_algorithm(void)
 
 /* Build a DX21/DX27/DX100 32-voice dump with known values in it. */
 static size_t
-build_4op_dump(uint8_t *out, size_t cap)
+build_4op_dump(uint8_t *out, size_t cap, uint8_t format)
 {
     static const char *names[2] = { "FOUR OP 1 ", "FOUR OP 2 " };
     size_t n = 0;
@@ -471,7 +471,7 @@ build_4op_dump(uint8_t *out, size_t cap)
 
     if (cap < 6 + 4096 + 2) return 0;
     out[n++] = 0xf0; out[n++] = 0x43; out[n++] = 0x00;
-    out[n++] = 0x03;                       /* four-operator bulk */
+    out[n++] = format;                     /* 0x03 four-operator, 0x04 TX81Z */
     out[n++] = 0x20; out[n++] = 0x00;      /* 4096 bytes follow */
 
     memset(out + n, 0, 4096);
@@ -514,12 +514,24 @@ test_4op_bank(void)
     size_t len;
     int n;
 
-    len = build_4op_dump(dump, sizeof(dump));
+    len = build_4op_dump(dump, sizeof(dump), 0x03);
     CHECK(len == 6 + 4096 + 2, "built a %zu byte four-operator dump", len);
 
     n = hexter_engine_load_bank_memory(e, dump, len, "dx100.syx", 0, &err);
     CHECK(n == 32, "four-operator dump loaded %d voices (%s)", n, err ? err : "no error");
     free(err); err = NULL;
+
+    /* a TX81Z bank is the same dump with format 0x04 */
+    {
+        static uint8_t tx[6 + 4096 + 2];
+        hexter_engine_t *t = hexter_engine_new(44100.0f);
+        size_t tlen = build_4op_dump(tx, sizeof(tx), 0x04);
+        char *terr = NULL;
+        int tn = hexter_engine_load_bank_memory(t, tx, tlen, "tx81z.syx", 0, &terr);
+        CHECK(tn == 32, "TX81Z dump loaded %d voices (%s)", tn, terr ? terr : "no error");
+        free(terr);
+        hexter_engine_free(t);
+    }
 
     hexter_engine_get_program_name(e, 0, name);
     CHECK(!strcmp(name, "FOUR OP 1 "), "voice 1 is named '%s'", name);

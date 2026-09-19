@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.4.1 (2026-09-19)
+
+### Fixed
+- TX81Z banks now actually load. 2.4.0 claimed them and did not have them: a TX81Z bank is
+  the same dump as a DX100's under format byte `0x04` rather than `0x03`, and only `0x03` was
+  recognized. Both are accepted now. Its voices sit the same way in the bytes hexter reads, so
+  they convert like the others and the TX81Z's extras are ignored. This part is built from the
+  format rather than from a real dump and has not been tried against hardware.
+
 ## 2.4.0 (2026-09-19)
 
 ### Added
