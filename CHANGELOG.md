@@ -2,7 +2,17 @@
 
 ## Unreleased
 
+### Changed
+- **The build says what it is going to build.** Every configure now ends with a short list:
+  which engine, and which of the CLAP, LV2, DSSI, Audio Unit, standalone, tool and tests are
+  actually being built. hexter has already shipped one option that nothing ever built, and a
+  list like this is how you notice the next one.
+- Turning the CLAP off used to take the Audio Unit and the standalone with it without a word,
+  since both are the CLAP wrapped up. It says so now.
+
 ### Checked
+- **Every build option was tried off, one at a time, and they all still configure and build.**
+  CI only ever exercises three of the eight, so the rest were taken on trust until now.
 - **The FB-01 conversion was checked against two more sources and holds.** It was written
   from one editor's reading of the format; it has now been compared against Yamaha's own
   Voice Data Format and Operator Block tables in the FB-01 owner's manual, and against the

@@ -134,6 +134,11 @@ if(HEXTER_BUILD_CLAP)
             set(HEXTER_WRAP_STANDALONE ON)
         endif()
     endif()
+elseif(HEXTER_BUILD_AUV2 OR HEXTER_BUILD_STANDALONE)
+    # Both are the CLAP wrapped up, so without it there is nothing to wrap. Say
+    # so rather than quietly building neither.
+    message(STATUS "hexter: the Audio Unit and the standalone are built from the CLAP, "
+                   "so HEXTER_BUILD_CLAP=OFF skips them too")
 endif()
 
 if(HEXTER_WRAP_AUV2 OR HEXTER_WRAP_STANDALONE)
@@ -245,6 +250,7 @@ endif()
 
 # ---- legacy DSSI plugin and GTK2 editor (Linux, when the libraries exist) ----
 
+set(HEXTER_DSSI_BUILT OFF)
 if(HEXTER_BUILD_DSSI)
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)
@@ -262,6 +268,7 @@ if(HEXTER_BUILD_DSSI)
         set_target_properties(hexter_dssi PROPERTIES OUTPUT_NAME hexter PREFIX "" SUFFIX ".so"
                               C_VISIBILITY_PRESET default)
         install(TARGETS hexter_dssi LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/dssi)
+        set(HEXTER_DSSI_BUILT ON)
         message(STATUS "hexter: building the legacy DSSI plugin")
     else()
         message(STATUS "hexter: DSSI/ALSA not found, skipping the legacy DSSI plugin")
@@ -355,3 +362,36 @@ install(FILES extra/default_patches.dx7 extra/dx7_roms.dx7 extra/tx7_roms.dx7
               extra/fb01_roms_converted_12.dx7 extra/fb01_roms_converted_34.dx7
               extra/fb01_roms_converted_5.dx7
         DESTINATION ${CMAKE_INSTALL_DATADIR}/hexter/banks)
+
+# ---- what this configuration will actually build ----
+#
+# Worth printing: an option that is advertised but never built is a promise
+# nobody is keeping, and hexter has had one of those before (the floating-point
+# engine, which nothing built until it had a failing test in it).
+
+message(STATUS "")
+message(STATUS "hexter ${PROJECT_VERSION} will build:")
+if(HEXTER_FLOATING_POINT)
+    message(STATUS "    engine ................ floating point")
+else()
+    message(STATUS "    engine ................ fixed point (renders the same everywhere)")
+endif()
+foreach(_part "CLAP plugin;${HEXTER_BUILD_CLAP}"
+              "LV2 plugin;${HEXTER_BUILD_LV2}"
+              "DSSI plugin;${HEXTER_DSSI_BUILT}"
+              "Audio Unit;${HEXTER_WRAP_AUV2}"
+              "standalone;${HEXTER_WRAP_STANDALONE}"
+              "hexter-render;${HEXTER_BUILD_TOOLS}"
+              "tests;${HEXTER_BUILD_TESTS}")
+    list(GET _part 0 _name)
+    list(GET _part 1 _on)
+    string(LENGTH "${_name}" _len)
+    math(EXPR _pad "22 - ${_len}")
+    string(REPEAT "." ${_pad} _dots)
+    if(_on)
+        message(STATUS "    ${_name} ${_dots} yes")
+    else()
+        message(STATUS "    ${_name} ${_dots} no")
+    endif()
+endforeach()
+message(STATUS "")
