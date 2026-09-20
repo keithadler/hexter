@@ -131,9 +131,10 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
             /* A four-operator 32 voice dump: same framing as the DX7's, with
              * format 0x03 (DX21, DX27, DX100) or 0x04 (TX81Z) rather than 0x09,
              * and four operators per voice instead of six. Both lay the voice
-             * out the same way in the bytes we read; the TX81Z's extras live
-             * past them and in a separate dump, and are ignored. Convert each
-             * voice on the way in. */
+             * out the same way in the bytes we read. The TX81Z keeps its
+             * extras past them, and the operator waveform among those is
+             * read; the rest live in a separate dump and are ignored.
+             * Convert each voice on the way in. */
             const uint8_t *src = raw_patch_data + patchstart + 6 + midshift;
 
             for (i = 0; i < DX_4OP_DUMP_VOICES; i++) {

@@ -33,6 +33,7 @@
 #include "hexter_synth.h"
 #include "dx7_voice.h"
 #include "dx7_voice_data.h"
+#include "dx7_voice_4op.h"
 #include "dx7_bank.h"
 #include "hexter_engine.h"
 
@@ -340,9 +341,16 @@ refresh_current_patch(hexter_instance_t *instance, int first, int count)
 {
     if (instance->current_program >= first &&
         instance->current_program < first + count &&
-        instance->current_program != instance->overlay_program)
+        instance->current_program != instance->overlay_program) {
         dx7_patch_unpack(instance->patches, instance->current_program,
                          instance->current_patch_buffer);
+        /* the waveforms belong to the patch, so they have to follow it here
+         * too, or a bank loaded over a TX81Z one keeps its shapes until the
+         * next program change */
+        memcpy(instance->current_op_wave,
+               instance->patch_op_wave[instance->current_program],
+               MAX_DX7_OPERATORS);
+    }
 }
 
 void
@@ -623,9 +631,11 @@ hexter_engine_store_current_patch(hexter_engine_t *instance, int program)
 
 /* ---- sysex, on the audio thread ---- */
 
-/* Yamaha DX7 messages:
+/* Yamaha messages:
  *   F0 43 0n 00 01 1B <155 bytes> <cksum> F7       single voice (to the edit buffer)
  *   F0 43 0n 09 20 00 <4096 bytes> <cksum> F7      32 voices (to programs 0-31)
+ *   F0 43 0n 03 20 00 <4096 bytes> <cksum> F7      32 four-operator voices, converted
+ *   F0 43 0n 04 20 00 <4096 bytes> <cksum> F7      the same from a TX81Z
  *   F0 43 1n gp pp vv F7                           parameter change:
  *        g = (gp >> 2): 0 voice parameter (pp 0-155), 2 function parameter (pp 64-77)
  */
@@ -648,6 +658,39 @@ handle_sysex(hexter_instance_t *instance, const uint8_t *d, uint32_t n)
             if (dx7_bulk_dump_checksum(d + 6, 4096) != d[4102]) return;
             if (hexter_mutex_trylock(&instance->patches_mutex)) return;
             memcpy(instance->patches, d + 6, 4096);
+            /* a DX7 dump has only sines in it, and says so */
+            memset(instance->patch_op_wave, 0, 32 * MAX_DX7_OPERATORS);
+            if (instance->overlay_program >= 0 && instance->overlay_program < 32)
+                instance->overlay_program = -1;
+            refresh_current_patch(instance, 0, 32);
+            hexter_mutex_unlock(&instance->patches_mutex);
+
+        } else if (n == 4104 && (d[3] == 0x03 || d[3] == 0x04) &&
+                   d[4] == 0x20 && d[5] == 0x00) {
+            /*
+             * A four-operator 32 voice bulk dump, DX21/DX27/DX100 (format
+             * 0x03) or TX81Z (0x04), converted on the way in exactly as a
+             * bank file is. Sending one of these from the hardware now works
+             * the same way sending a DX7 dump always has.
+             *
+             * This converts 32 voices on the audio thread, which is more work
+             * than the memcpy above but still tens of microseconds, once, for
+             * a message that arrives when somebody presses a button.
+             */
+            int i;
+
+            if (dx7_bulk_dump_checksum(d + 6, 4096) != d[4102]) return;
+            if (hexter_mutex_trylock(&instance->patches_mutex)) return;
+            for (i = 0; i < DX_4OP_DUMP_VOICES; i++) {
+                uint8_t unpacked[DX7_VOICE_SIZE_UNPACKED];
+                uint8_t packed[DX7_VOICE_SIZE_PACKED];  /* dx7_patch_pack must not overlap */
+
+                dx_4op_voice_to_dx7(d + 6 + i * DX_4OP_VOICE_SIZE_PACKED, unpacked,
+                                    instance->patch_op_wave[i]);
+                dx7_patch_pack(unpacked, (dx7_patch_t *)packed, 0);
+                memcpy((uint8_t *)instance->patches + i * DX7_VOICE_SIZE_PACKED,
+                       packed, DX7_VOICE_SIZE_PACKED);
+            }
             if (instance->overlay_program >= 0 && instance->overlay_program < 32)
                 instance->overlay_program = -1;
             refresh_current_patch(instance, 0, 32);

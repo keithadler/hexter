@@ -22,7 +22,7 @@ editor still build on Linux when their libraries are installed.
 | Platforms | Linux (x86_64 and arm64), macOS (Apple silicon and Intel), Windows (x64 and arm64), Android (8.0 or newer, 64-bit), iOS (16 or newer, built with Xcode) |
 | Banks | `.syx`, `.dx7`, `.mid` (sysex inside a MIDI file), `.tx7`, `.snd`, `.bnk`, `.dx2`, raw packed voices |
 | Four-operator banks | DX21, DX27, DX100 and TX81Z voices load too, converted, TX81Z operator waveforms included. See below |
-| Sysex | DX7 single voice, 32-voice bulk dump, voice and function parameter changes |
+| Sysex | DX7 single voice, 32-voice bulk dump (six-operator or four-operator), voice and function parameter changes |
 | License | GPL-2.0-or-later |
 
 ## Download
@@ -201,7 +201,8 @@ return. A patch's shapes are saved with your session.
 **Loading a bank.** In a CLAP host, use the host's preset browser and point
 it at any bank file (hexter implements `clap.preset-load`). In an LV2 host,
 set the *Bank file* property. Either way you can also send the bank as a
-**DX7 bulk dump over MIDI**, exactly as you would to the hardware, or set
+**bulk dump over MIDI**, exactly as you would to the hardware, from a
+six-operator machine or a four-operator one, or set
 the environment variable `HEXTER_DEFAULT_BANK` to a file that loads on
 every instance. Six banks ship in `banks/`, including the original DX7
 ROM cartridges.

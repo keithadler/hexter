@@ -124,7 +124,7 @@ plugins for Linux, macOS and Windows, plus apps for Android and iOS.</p>
   <tr><th>Phones</th><td>An Android app, and an iPhone and iPad app you build yourself</td></tr>
   <tr><th>Command line</th><td><code>hexter-render</code> turns a MIDI file and a bank into a WAV</td></tr>
   <tr><th>Banks</th><td><code>.syx</code>, <code>.dx7</code>, <code>.mid</code>, <code>.tx7</code>, <code>.snd</code>, <code>.bnk</code>, <code>.dx2</code>, and raw packed voices</td></tr>
-  <tr><th>Sysex</th><td>Single voice, 32-voice bulk dump, voice and function parameter changes, as the hardware sends them</td></tr>
+  <tr><th>Sysex</th><td>Single voice, 32-voice bulk dump (six-operator or four-operator), voice and function parameter changes, as the hardware sends them</td></tr>
   <tr><th>License</th><td>GPL-2.0-or-later</td></tr>
 </table>
 
@@ -203,7 +203,8 @@ familiar patch somewhere a DX7 cannot go.</p>
 
 <p><strong>Loading a bank.</strong> In a CLAP host, use the host's preset browser and
 point it at any bank file. In an LV2 host, set the Bank file property. Either way you
-can also send the bank as a DX7 bulk dump over MIDI, exactly as you would to the
+can also send the bank as a bulk dump over MIDI, from a six-operator machine or a
+four-operator one, exactly as you would to the
 hardware, or set <code>HEXTER_DEFAULT_BANK</code> to a file that loads on every
 instance. Six banks ship with it, including the original DX7 ROM cartridges.</p>
 

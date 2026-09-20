@@ -743,6 +743,73 @@ test_op_waveforms(void)
         hexter_engine_free(t);
     }
 
+    /* A four-operator dump sent over MIDI, which is how you would send one
+     * from the hardware, converts the same way a file does. */
+    {
+        hexter_engine_t *t = hexter_engine_new(44100.0f);
+        static uint8_t tx[6 + 4096 + 2];
+        hexter_event_t ev;
+        static float out[256];
+        char nm[11];
+
+        build_4op_dump(tx, sizeof(tx), 0x04, 1);
+        CHECK(hexter_event_from_midi(tx, 6 + 4096 + 2, 0, &ev),
+              "a TX81Z dump parses as sysex");
+        hexter_engine_render(t, out, 256, &ev, 1);
+        hexter_engine_get_program_name(t, 0, nm);
+        CHECK(!strcmp(nm, "FOUR OP 1 "), "it loaded over MIDI, program 1 is '%s'", nm);
+        hexter_engine_get_op_waves(t, got);
+        CHECK(got[3] == 3 && got[4] == 5 && got[2] == 1 && got[5] == 7,
+              "and brought its waveforms (%d %d %d %d)", got[3], got[4], got[2], got[5]);
+
+        /* a DX7 dump over the top puts every operator back to a sine, without
+         * needing a program change to notice */
+        {
+            dx7_patch_t rom[128];
+            static uint8_t bulk[4104];
+            char *berr = NULL;
+
+            CHECK(dx7_patchbank_load(bank_path("dx7_roms.dx7"), rom, 128, &berr) == 128,
+                  "load ROM to send over it");
+            free(berr);
+            bulk[0] = 0xF0; bulk[1] = 0x43; bulk[2] = 0x00;
+            bulk[3] = 0x09; bulk[4] = 0x20; bulk[5] = 0x00;
+            memcpy(bulk + 6, rom, 4096);
+            bulk[4102] = (uint8_t)dx7_bulk_dump_checksum(bulk + 6, 4096);
+            bulk[4103] = 0xF7;
+            hexter_event_from_midi(bulk, sizeof(bulk), 0, &ev);
+            hexter_engine_render(t, out, 256, &ev, 1);
+            hexter_engine_get_program_name(t, 0, nm);
+            CHECK(!strcmp(nm, "BRASS   1 "), "the DX7 dump landed, program 1 is '%s'", nm);
+            hexter_engine_get_op_waves(t, got);
+            for (i = 0; i < 6; i++) if (got[i] != 0) break;
+            CHECK(i == 6, "and the sounding patch went back to sines");
+        }
+        hexter_engine_free(t);
+    }
+
+    /* the same, for a bank file loaded over a TX81Z one with no program change */
+    {
+        hexter_engine_t *t = hexter_engine_new(44100.0f);
+        static uint8_t tx[6 + 4096 + 2];
+        size_t tlen = build_4op_dump(tx, sizeof(tx), 0x04, 1);
+        char *terr = NULL;
+
+        hexter_engine_load_bank_memory(t, tx, tlen, "tx81z.syx", 0, &terr);
+        free(terr); terr = NULL;
+        hexter_engine_select_program(t, 0);
+        hexter_engine_get_op_waves(t, got);
+        CHECK(got[3] == 3, "the TX81Z bank is in place (%d)", got[3]);
+
+        CHECK(hexter_engine_load_bank_file(t, bank_path("dx7_roms.dx7"), 0, &terr) == 128,
+              "a DX7 bank loads over it");
+        free(terr);
+        hexter_engine_get_op_waves(t, got);
+        for (i = 0; i < 6; i++) if (got[i] != 0) break;
+        CHECK(i == 6, "and the sounding patch goes back to sines at once");
+        hexter_engine_free(t);
+    }
+
     /* a DX100 bank has nothing in those bytes, so every operator is a sine */
     {
         hexter_engine_t *t = hexter_engine_new(44100.0f);

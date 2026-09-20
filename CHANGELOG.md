@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.6.1 (2026-09-19)
+
+### Fixed
+- **Loading a bank over a TX81Z one left the old waveforms on the sounding patch.** The
+  new bank's own shapes did not reach the patch you were playing until you changed program
+  and came back. Introduced in 2.6.0, an hour old, and found while writing the MIDI support
+  below.
+
+### Added
+- **Four-operator bulk dumps arrive over MIDI too.** hexter has always accepted a DX7
+  32-voice dump sent the way you would send one to the hardware, and the README said so;
+  a DX21, DX27, DX100 or TX81Z dump was quietly ignored. It converts now, waveforms and
+  all, exactly as the same dump does when it comes from a file.
+
 ## 2.6.0 (2026-09-19)
 
 ### Added
