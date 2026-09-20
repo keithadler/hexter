@@ -486,6 +486,30 @@ hexter_instance_update_op_param(hexter_instance_t *instance, int opnum,
 }
 
 /*
+ * hexter_instance_apply_op_waves
+ *
+ * Give the sounding voices the operator waveforms too, so that changing one
+ * while a chord is held is heard at once, the way the four-operator machines
+ * behave, rather than waiting for the next note.
+ */
+void
+hexter_instance_apply_op_waves(hexter_instance_t *instance, const uint8_t *wave6)
+{
+    int i, op;
+    dx7_voice_t *voice;
+
+    for (i = 0; i < instance->max_voices; i++) {
+        voice = instance->voice[i];
+        if (_PLAYING(voice)) {
+            for (op = 0; op < MAX_DX7_OPERATORS; op++) {
+                voice->op[op].waveform = wave6[op] % DX7_WAVEFORMS;
+                voice->op[op].wave = dx7_voice_wave_table[voice->op[op].waveform];
+            }
+        }
+    }
+}
+
+/*
  * hexter_instance_apply_algorithm
  *
  * apply an algorithm change (0-31) to any playing voices. The render loop
@@ -878,8 +902,11 @@ hexter_instance_select_program(hexter_instance_t *instance, unsigned long bank,
     instance->current_program = program;
     if (instance->overlay_program == program) { /* edit buffer applies */
         memcpy(instance->current_patch_buffer, instance->overlay_patch_buffer, DX7_VOICE_SIZE_UNPACKED);
+        memcpy(instance->current_op_wave, instance->overlay_op_wave, MAX_DX7_OPERATORS);
     } else {
         dx7_patch_unpack(instance->patches, program, instance->current_patch_buffer);
+        /* the waveforms live beside the patch, so they follow it */
+        memcpy(instance->current_op_wave, instance->patch_op_wave[program], MAX_DX7_OPERATORS);
     }
 }
 

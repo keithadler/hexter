@@ -21,7 +21,7 @@ editor still build on Linux when their libraries are installed.
 | iPhone and iPad | the same app for iOS, in `ios/`; Apple does not allow a download, so you build it yourself with Xcode (see below) |
 | Platforms | Linux (x86_64 and arm64), macOS (Apple silicon and Intel), Windows (x64 and arm64), Android (8.0 or newer, 64-bit), iOS (16 or newer, built with Xcode) |
 | Banks | `.syx`, `.dx7`, `.mid` (sysex inside a MIDI file), `.tx7`, `.snd`, `.bnk`, `.dx2`, raw packed voices |
-| Four-operator banks | DX21, DX27, DX100 and the TX81Z's base voices load too, converted. See below |
+| Four-operator banks | DX21, DX27, DX100 and TX81Z voices load too, converted, TX81Z operator waveforms included. See below |
 | Sysex | DX7 single voice, 32-voice bulk dump, voice and function parameter changes |
 | License | GPL-2.0-or-later |
 
@@ -160,13 +160,14 @@ from Files, or drop files into the hexter folder in Files under *On My iPhone*.
 
 ## Using it
 
-hexter has no window of its own. Your host shows its six parameters and
+hexter has no window of its own. Your host shows its parameters and
 you play it over MIDI, which is how a real DX7 module works:
 
 | Parameter | Range | Notes |
 |---|---|---|
 | Program | 1 to 128 | Named from the loaded bank. MIDI program change works too. |
 | Algorithm | Patch, or 1 to 32 | Forces the patch's operator wiring. See below. |
+| OP1 to OP6 wave | Patch, or W1 to W8 | The waveform each operator plays. See below. |
 | Tuning | 415.3 to 466.2 Hz | A4 |
 | Volume | -70 to +20 dB | |
 | Polyphony | 1 to 64 voices | |
@@ -181,6 +182,21 @@ which you hear on notes you are already holding rather than only on the next
 one. Move it back to Patch and the patch's own algorithm returns. Selecting a
 program also brings the patch's algorithm back. It automates like any other
 parameter.
+
+**The waveform knobs** give each operator one of eight shapes instead of only
+the sine a DX7 has. This is the TX81Z's idea, and hexter uses the same eight
+shapes: **W1** is the plain sine, W2 is that sine squared, and the rest silence
+part of the cycle or run it at double speed. Anything but W1 adds harmonics
+before the FM even starts, which takes a patch somewhere a DX7 cannot go: a
+squared carrier is brighter and reedier, and a half-cycle modulator gets buzzy
+fast.
+
+They are overrides, the same as the algorithm knob. At **Patch** an operator
+plays whatever its patch says, which for a DX7 voice is the sine and for a
+converted TX81Z voice is the shape that voice was written with. Pick W1 to W8
+and that operator is forced, on notes you are already holding as well as the
+next one. Back to Patch, or a program change, and the patch's own shapes
+return. A patch's shapes are saved with your session.
 
 **Loading a bank.** In a CLAP host, use the host's preset browser and point
 it at any bank file (hexter implements `clap.preset-load`). In an LV2 host,
@@ -203,16 +219,18 @@ algorithm stands closest, and the other two stay silent. Envelopes, ratios,
 detune, feedback, the LFO and the name come across.
 
 Treat that as a **sound-alike rather than the real thing**. Their envelopes have
-a stage the DX7 does not, their pitch modulation reaches further for the same
-number, and the TX81Z's operator waveforms have nowhere to go. It is a way to
-play those banks, not a way to hear that hardware. The voice layout and the
-algorithm mapping follow [XDX](https://github.com/wurly200a/xdx), MIT licensed.
+a stage the DX7 does not, and their pitch modulation reaches further for the
+same number. It is a way to play those banks, not a way to hear that hardware.
+The voice layout and the algorithm mapping follow
+[XDX](https://github.com/wurly200a/xdx), MIT licensed.
 
 A **TX81Z** bank is the same dump under a different format byte, and its voices
-are laid out the same way in the bytes hexter reads, so those load too and its
-extras, the operator waveforms above all, are ignored. That part is built from
-the format rather than from a real dump: nobody has tried it against hardware
-yet. If you own one, send a bank and say what comes out wrong.
+are laid out the same way in the bytes hexter reads, so those load too. Its
+operator waveforms come across as well, each one landing on the DX7 operator
+that four-operator one became, so a TX81Z patch that leans on a shape other
+than the sine still sounds like itself. That part is built from the format
+rather than from a real dump: nobody has tried it against hardware yet. If you
+own one, send a bank and say what comes out wrong.
 
 **Editing.** Send DX7 parameter-change sysex (from a hardware DX7, a
 librarian, or an editor such as Dexed) and hexter follows, including

@@ -41,10 +41,15 @@ enum {
     P_MONO_MODE,
     P_PROGRAM,
     P_ALGORITHM,
-    P_COUNT
+    P_OP1_WAVE,                       /* six in a row, OP1 through OP6 */
+    P_COUNT = P_OP1_WAVE + HEXTER_OPERATORS
 };
 
 static const char *mono_mode_names[4] = { "Poly", "Mono", "Mono legato", "Mono both" };
+/* position 0 is "Patch"; the rest are the eight shapes, W1 being the sine */
+static const char *op_wave_names[HEXTER_OP_WAVEFORMS + 1] = {
+    "Patch", "W1 sine", "W2", "W3", "W4", "W5", "W6", "W7", "W8"
+};
 
 typedef struct {
     clap_plugin_t              plugin;
@@ -57,6 +62,10 @@ typedef struct {
     hexter_engine_t *engine;
     int              algorithm;        /* 0 = as the patch says, 1-32 = override */
     int              algorithm_saved;  /* the patch's own value under an override, else -1 */
+    int              op_wave[HEXTER_OPERATORS];          /* 0 = as the patch says, 1-8 = shape */
+    uint8_t          op_wave_saved[HEXTER_OPERATORS];    /* the patch's own shapes, under an override */
+    uint8_t          op_wave_pushed[HEXTER_OPERATORS];   /* what was last handed to the engine */
+    int              op_wave_overriding;                 /* whether those two mean anything */
     float            sample_rate;
     uint32_t         max_frames;
     float           *mono;            /* scratch, max_frames */
@@ -235,6 +244,14 @@ params_get_info(const clap_plugin_t *plugin, uint32_t index, clap_param_info_t *
         info->max_value = 32;
         info->default_value = 0;
         break;
+      default:                       /* the six operator waveforms */
+        snprintf(info->name, sizeof(info->name), "OP%u wave",
+                 (unsigned)(index - P_OP1_WAVE + 1));
+        info->flags = CLAP_PARAM_IS_STEPPED | CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_ENUM;
+        info->min_value = 0;
+        info->max_value = HEXTER_OP_WAVEFORMS;
+        info->default_value = 0;
+        break;
     }
     return true;
 }
@@ -251,7 +268,12 @@ params_get_value(const clap_plugin_t *plugin, clap_id id, double *value)
       case P_MONO_MODE: *value = hexter_engine_get_mono_mode(h->engine); return true;
       case P_PROGRAM:   *value = hexter_engine_get_program(h->engine);   return true;
       case P_ALGORITHM: *value = h->algorithm;                            return true;
-      default: return false;
+      default:
+        if (id >= P_OP1_WAVE && id < P_OP1_WAVE + HEXTER_OPERATORS) {
+            *value = h->op_wave[id - P_OP1_WAVE];
+            return true;
+        }
+        return false;
     }
 }
 
@@ -295,6 +317,13 @@ params_value_to_text(const clap_plugin_t *plugin, clap_id id, double value,
         else        snprintf(out, out_size, "%d", v);
         return true;
       default:
+        if (id >= P_OP1_WAVE && id < P_OP1_WAVE + HEXTER_OPERATORS) {
+            v = (int)lrint(value);
+            if (v < 0) v = 0;
+            if (v > HEXTER_OP_WAVEFORMS) v = HEXTER_OP_WAVEFORMS;
+            snprintf(out, out_size, "%s", op_wave_names[v]);
+            return true;
+        }
         return false;
     }
 }
@@ -324,6 +353,14 @@ params_text_to_value(const clap_plugin_t *plugin, clap_id id, const char *text,
     if (id == P_ALGORITHM && !strncmp(text, "Patch", 5)) {
         *value = 0;
         return true;
+    }
+    if (id >= P_OP1_WAVE && id < P_OP1_WAVE + HEXTER_OPERATORS) {
+        for (i = 0; i <= HEXTER_OP_WAVEFORMS; i++)
+            if (!strcmp(text, op_wave_names[i])) {
+                *value = i;
+                return true;
+            }
+        return false;
     }
     if (id == P_PROGRAM) {
         /* accept "12: NAME" or "12" as one-based, matching the display */
@@ -370,6 +407,43 @@ apply_algorithm(hexter_clap_t *h, int value)
     h->algorithm = value;
 }
 
+/*
+ * The waveform knobs work the same way as the algorithm knob: each one is an
+ * override the plugin owns, and "Patch" leaves that operator with whatever the
+ * bank gave it, which for a TX81Z patch is a shape of its own.
+ */
+static void
+apply_op_wave(hexter_clap_t *h, int op, int value)
+{
+    uint8_t now[HEXTER_OPERATORS], want[HEXTER_OPERATORS];
+    int i, any = 0;
+
+    if (op < 0 || op >= HEXTER_OPERATORS) return;
+    if (value < 0) value = 0;
+    if (value > HEXTER_OP_WAVEFORMS) value = HEXTER_OP_WAVEFORMS;
+    if (value == h->op_wave[op]) return;
+    h->op_wave[op] = value;
+
+    for (i = 0; i < HEXTER_OPERATORS; i++) if (h->op_wave[i]) any = 1;
+    hexter_engine_get_op_waves(h->engine, now);
+
+    if (any) {
+        if (!h->op_wave_overriding) {
+            memcpy(h->op_wave_saved, now, HEXTER_OPERATORS);
+            h->op_wave_overriding = 1;
+        }
+        for (i = 0; i < HEXTER_OPERATORS; i++)
+            want[i] = h->op_wave[i] ? (uint8_t)(h->op_wave[i] - 1) : h->op_wave_saved[i];
+        hexter_engine_set_op_waves(h->engine, want);
+        memcpy(h->op_wave_pushed, want, HEXTER_OPERATORS);
+    } else if (h->op_wave_overriding) {
+        /* put the patch's own shapes back, unless a program change beat us to it */
+        if (!memcmp(now, h->op_wave_pushed, HEXTER_OPERATORS))
+            hexter_engine_set_op_waves(h->engine, h->op_wave_saved);
+        h->op_wave_overriding = 0;
+    }
+}
+
 /* apply a parameter change now (main thread, or audio thread outside render) */
 static void
 apply_param_now(hexter_clap_t *h, clap_id id, double value)
@@ -381,7 +455,10 @@ apply_param_now(hexter_clap_t *h, clap_id id, double value)
       case P_MONO_MODE: hexter_engine_set_mono_mode(h->engine, (int)lrint(value)); break;
       case P_PROGRAM:   hexter_engine_select_program(h->engine, (int)lrint(value)); break;
       case P_ALGORITHM: apply_algorithm(h, (int)lrint(value)); break;
-      default: break;
+      default:
+        if (id >= P_OP1_WAVE && id < P_OP1_WAVE + HEXTER_OPERATORS)
+            apply_op_wave(h, (int)(id - P_OP1_WAVE), (int)lrint(value));
+        break;
     }
 }
 
@@ -416,9 +493,24 @@ static const clap_plugin_params_t ext_params = {
  * The engine writes a fixed-size block and its loader ignores anything after it, so the
  * plugin's own settings ride along in a trailer. A state written before the algorithm
  * knob existed simply has no trailer, and loads with the knob at "Patch".
+ *
+ * The waveform knobs made the trailer longer, so it became HXA2. An HXA1 trailer is
+ * still read, and it sits at the shorter offset that engine state used to have, so a
+ * session saved by an older hexter keeps its algorithm as well as its patches.
+ *
+ *   0   "HXA2"
+ *   4   i32 algorithm
+ *   8   i32 algorithm saved
+ *   12  the six waveform knobs, a byte each
+ *   18  the six shapes saved under an override
+ *   24  the six shapes last handed to the engine
+ *   30  whether an override is in force
+ *   31  pad
  */
-#define TRAILER_MAGIC "HXA1"
-#define TRAILER_SIZE  12
+#define TRAILER_MAGIC    "HXA2"
+#define TRAILER_SIZE     32
+#define TRAILER_MAGIC_V1 "HXA1"
+#define TRAILER_SIZE_V1  12
 
 static void put_i32(uint8_t *p, int32_t v)
 {
@@ -439,11 +531,18 @@ state_save(const clap_plugin_t *plugin, const clap_ostream_t *stream)
     uint8_t buf[HEXTER_STATE_SIZE + TRAILER_SIZE];
     size_t n = hexter_engine_state_save(h->engine, buf, HEXTER_STATE_SIZE);
     size_t done = 0;
+    int i;
 
     if (!n) return false;
     memcpy(buf + n, TRAILER_MAGIC, 4);
+    memset(buf + n + 4, 0, TRAILER_SIZE - 4);
     put_i32(buf + n + 4, (int32_t)h->algorithm);
     put_i32(buf + n + 8, (int32_t)h->algorithm_saved);
+    for (i = 0; i < HEXTER_OPERATORS; i++)
+        buf[n + 12 + i] = (uint8_t)h->op_wave[i];
+    memcpy(buf + n + 18, h->op_wave_saved, HEXTER_OPERATORS);
+    memcpy(buf + n + 24, h->op_wave_pushed, HEXTER_OPERATORS);
+    buf[n + 30] = (uint8_t)(h->op_wave_overriding ? 1 : 0);
     n += TRAILER_SIZE;
 
     while (done < n) {
@@ -474,12 +573,39 @@ state_load(const clap_plugin_t *plugin, const clap_istream_t *stream)
 
     h->algorithm = 0;
     h->algorithm_saved = -1;
-    if (done >= HEXTER_STATE_SIZE + TRAILER_SIZE &&
-        !memcmp(buf + HEXTER_STATE_SIZE, TRAILER_MAGIC, 4)) {
-        int32_t a = get_i32(buf + HEXTER_STATE_SIZE + 4);
-        int32_t s = get_i32(buf + HEXTER_STATE_SIZE + 8);
-        if (a >= 0 && a <= 32) h->algorithm = a;
-        if (s >= -1 && s <= 31) h->algorithm_saved = s;
+    memset(h->op_wave, 0, sizeof(h->op_wave));
+    memset(h->op_wave_saved, 0, sizeof(h->op_wave_saved));
+    memset(h->op_wave_pushed, 0, sizeof(h->op_wave_pushed));
+    h->op_wave_overriding = 0;
+    {
+        /* this hexter's trailer, or the shorter one an older hexter wrote after
+         * its own shorter engine block */
+        const uint8_t *t = NULL;
+        int v2 = 0, i;
+
+        if (done >= HEXTER_STATE_SIZE + TRAILER_SIZE &&
+            !memcmp(buf + HEXTER_STATE_SIZE, TRAILER_MAGIC, 4)) {
+            t = buf + HEXTER_STATE_SIZE;
+            v2 = 1;
+        } else if (done >= HEXTER_STATE_SIZE_V1 + TRAILER_SIZE_V1 &&
+                   !memcmp(buf + HEXTER_STATE_SIZE_V1, TRAILER_MAGIC_V1, 4)) {
+            t = buf + HEXTER_STATE_SIZE_V1;
+        }
+        if (t) {
+            int32_t a = get_i32(t + 4);
+            int32_t sv = get_i32(t + 8);
+            if (a >= 0 && a <= 32) h->algorithm = a;
+            if (sv >= -1 && sv <= 31) h->algorithm_saved = sv;
+        }
+        if (t && v2) {
+            for (i = 0; i < HEXTER_OPERATORS; i++)
+                if (t[12 + i] <= HEXTER_OP_WAVEFORMS) h->op_wave[i] = t[12 + i];
+            for (i = 0; i < HEXTER_OPERATORS; i++) {
+                h->op_wave_saved[i]  = t[18 + i] % HEXTER_OP_WAVEFORMS;
+                h->op_wave_pushed[i] = t[24 + i] % HEXTER_OP_WAVEFORMS;
+            }
+            h->op_wave_overriding = t[30] ? 1 : 0;
+        }
     }
 
     h->last_program = hexter_engine_get_program(h->engine);
@@ -710,7 +836,11 @@ plugin_process(const clap_plugin_t *plugin, const clap_process_t *process)
                  * and this runs before render takes the voice list */
                 apply_algorithm(h, (int)lrint(p->value));
                 break;
-              default: break;
+              default:
+                if (p->param_id >= P_OP1_WAVE &&
+                    p->param_id < P_OP1_WAVE + HEXTER_OPERATORS)
+                    apply_op_wave(h, (int)(p->param_id - P_OP1_WAVE), (int)lrint(p->value));
+                break;
             }
             break;
           }
@@ -806,6 +936,10 @@ create_plugin(const clap_host_t *host)
     h->host = host;
     h->algorithm = 0;          /* "Patch": the knob starts out of the way */
     h->algorithm_saved = -1;
+    memset(h->op_wave, 0, sizeof(h->op_wave));           /* the same for the waveforms */
+    memset(h->op_wave_saved, 0, sizeof(h->op_wave_saved));
+    memset(h->op_wave_pushed, 0, sizeof(h->op_wave_pushed));
+    h->op_wave_overriding = 0;
     h->plugin.desc = &hexter_desc;
     h->plugin.plugin_data = h;
     h->plugin.init = plugin_init;

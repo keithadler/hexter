@@ -74,6 +74,11 @@ struct _dx7_patch_t
 
 #endif /* ! HEXTER_USE_FLOATING_POINT */
 
+/* The four-operator machines from the TX81Z on let each operator pick one of
+ * eight waveforms instead of only a sine. Shape 0 is the sine this synth has
+ * always used, so a DX7 patch renders exactly as it did before. */
+#define DX7_WAVEFORMS    8
+
 #define SINE_SHIFT       12
 #define SINE_SIZE        (1<<SINE_SHIFT)
 #define SINE_MASK        (SINE_SIZE-1)
@@ -157,6 +162,8 @@ struct _dx7_op_t   /* operator */
     uint8_t     coarse;
     uint8_t     fine;
     uint8_t     detune;
+    uint8_t     waveform;               /* 0 is the sine, 1-7 the others */
+    const dx7_sample_t *wave;           /* chosen once at note on */
 };
 
 enum dx7_lfo_status
@@ -248,6 +255,8 @@ struct _dx7_voice_t
 #define _AVAILABLE(voice)  ((voice)->status == DX7_VOICE_OFF)
 
 extern dx7_sample_t  dx7_voice_sin_table[SINE_SIZE + 1];
+/* the eight operator shapes; [0] is the sine table above, copied */
+extern dx7_sample_t  dx7_voice_wave_table[DX7_WAVEFORMS][SINE_SIZE + 1];
 
 extern uint8_t       dx7_voice_carriers[32];
 extern float         dx7_voice_carrier_count[32];

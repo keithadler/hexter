@@ -49,6 +49,18 @@ int dx7_patchbank_parse(uint8_t *data, long length, const char *filename,
 int dx7_patchbank_load(const char *filename, dx7_patch_t *firstpatch,
                        int maxpatches, char **errmsg);
 
+/*
+ * The same two, but also reporting each voice's operator waveforms, which only
+ * a four-operator bank carries. op_waves may be NULL; it is filled with one row
+ * of six per patch, all zero (plain sines) for every DX7 bank.
+ */
+int dx7_patchbank_parse_waves(uint8_t *data, long length, const char *filename,
+                              dx7_patch_t *firstpatch, int maxpatches,
+                              uint8_t (*op_waves)[6], char **errmsg);
+int dx7_patchbank_load_waves(const char *filename, dx7_patch_t *firstpatch,
+                             int maxpatches, uint8_t (*op_waves)[6],
+                             char **errmsg);
+
 #ifdef __cplusplus
 }
 #endif

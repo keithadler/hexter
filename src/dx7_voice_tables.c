@@ -44,6 +44,7 @@
 static int dx7_voice_tables_initialized = 0;
 
 dx7_sample_t    dx7_voice_sin_table[SINE_SIZE + 1];
+dx7_sample_t    dx7_voice_wave_table[DX7_WAVEFORMS][SINE_SIZE + 1];
 
 extern dx7_sample_t dx7_voice_eg_ol_to_mod_index_table[257]; /* forward */
 
@@ -62,6 +63,43 @@ void dx7_voice_init_tables(void) {
              * it uses cosine */
             f = cos((double)(i) / SINE_SIZE * (2 * M_PI));  /* index / index max * radian cycle */
             dx7_voice_sin_table[i] = DOUBLE_TO_FP(f);
+        }
+
+        /*
+         * The other seven operator shapes, the ones the TX81Z and the four
+         * operator machines after it added. Derived the way ymfm derives them
+         * for the YM2414 (aaronsgiles/ymfm, BSD-3-Clause): shape 1 is the
+         * square of shape 0 keeping its sign, and the rest silence the second
+         * half of the cycle, optionally running one of the first two at double
+         * rate through it. Shape 0 is this synth's own table, untouched, so
+         * every DX7 patch renders exactly as it always has.
+         */
+        {
+            static double base[SINE_SIZE + 1], squared[SINE_SIZE + 1];
+            const int half = SINE_SIZE / 2;
+            int w;
+
+            for (i = 0; i <= SINE_SIZE; i++) {
+                base[i]    = cos((double)(i) / SINE_SIZE * (2 * M_PI));
+                squared[i] = (base[i] < 0.0 ? -1.0 : 1.0) * base[i] * base[i];
+            }
+
+            for (i = 0; i <= SINE_SIZE; i++) {
+                int d  = (i * 2) % SINE_SIZE;   /* the whole cycle, at double rate */
+                int dh = (i * 2) % half;        /* the first half only, twice over */
+                int quiet = (i >= half);
+
+                dx7_voice_wave_table[0][i] = dx7_voice_sin_table[i];
+                dx7_voice_wave_table[1][i] = DOUBLE_TO_FP(squared[i]);
+                dx7_voice_wave_table[2][i] = quiet ? DOUBLE_TO_FP(0.0) : dx7_voice_sin_table[i];
+                dx7_voice_wave_table[3][i] = quiet ? DOUBLE_TO_FP(0.0) : DOUBLE_TO_FP(squared[i]);
+                dx7_voice_wave_table[4][i] = quiet ? DOUBLE_TO_FP(0.0) : DOUBLE_TO_FP(base[d]);
+                dx7_voice_wave_table[5][i] = quiet ? DOUBLE_TO_FP(0.0) : DOUBLE_TO_FP(squared[d]);
+                dx7_voice_wave_table[6][i] = quiet ? DOUBLE_TO_FP(0.0) : DOUBLE_TO_FP(base[dh]);
+                dx7_voice_wave_table[7][i] = quiet ? DOUBLE_TO_FP(0.0) : DOUBLE_TO_FP(squared[dh]);
+            }
+            for (w = 0; w < DX7_WAVEFORMS; w++)   /* the interpolation guard entry */
+                dx7_voice_wave_table[w][SINE_SIZE] = dx7_voice_wave_table[w][0];
         }
 
 #ifndef HEXTER_USE_FLOATING_POINT

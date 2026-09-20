@@ -246,7 +246,7 @@ main(int argc, char **argv)
     /* params */
     {
         uint32_t i, n = params->count(p);
-        CHECK(n == 6, "param count %u", n);
+        CHECK(n == 12, "param count %u", n);   /* five, the algorithm, and six waveforms */
         for (i = 0; i < n; i++) {
             clap_param_info_t info;
             CHECK(params->get_info(p, i, &info), "param %u info", i);
@@ -258,6 +258,22 @@ main(int argc, char **argv)
         CHECK(params->value_to_text(p, 4, 0, text, sizeof(text)) && strstr(text, "1:") == text, "program text starts with '1:' (%s)", text);
         CHECK(params->text_to_value(p, 4, "12: E.PIANO 1", &v) && fabs(v - 11.0) < 1e-9, "program text to value %f", v);
         CHECK(params->text_to_value(p, 3, "Mono legato", &v) && fabs(v - 2.0) < 1e-9, "mono text to value %f", v);
+        /* the six waveform knobs are params 6 through 11 */
+        CHECK(params->value_to_text(p, 6, 0, text, sizeof(text)) && !strcmp(text, "Patch"),
+              "OP1 wave at rest reads '%s'", text);
+        CHECK(params->value_to_text(p, 6, 1, text, sizeof(text)) && !strcmp(text, "W1 sine"),
+              "OP1 wave 1 reads '%s'", text);
+        CHECK(params->value_to_text(p, 11, 8, text, sizeof(text)) && !strcmp(text, "W8"),
+              "OP6 wave 8 reads '%s'", text);
+        CHECK(params->text_to_value(p, 8, "W5", &v) && fabs(v - 5.0) < 1e-9, "wave text to value %f", v);
+        {
+            clap_param_info_t wi;
+            CHECK(params->get_info(p, 6, &wi) && !strcmp(wi.name, "OP1 wave") &&
+                  wi.max_value == 8 && wi.default_value == 0,
+                  "OP1 wave info: '%s', 0 to %f", wi.name, wi.max_value);
+            CHECK(params->get_info(p, 11, &wi) && !strcmp(wi.name, "OP6 wave"),
+                  "the last one is '%s'", wi.name);
+        }
         CHECK(params->text_to_value(p, 0, "432 Hz", &v) && fabs(v - 432.0) < 1e-9, "tuning text to value %f", v);
 
         /* algorithm: 1-32 to a person, 0-31 in the voice data, and it follows the patch */
@@ -315,6 +331,39 @@ main(int argc, char **argv)
         r = process_blocks(p, &in, &out, 100, NULL);
         CHECK(r < 1e-4, "silent after release: rms %.6f", r);
 
+        /* a waveform knob changes the sound, and "Patch" puts it back */
+        {
+            double plain, shaped, back;
+            in_param(&in, 0, 4, 0);                  /* a known program */
+            process_blocks(p, &in, &out, 1, NULL);
+
+            in_note(&in, CLAP_EVENT_NOTE_ON, 0, 60, 0.8);
+            plain = process_blocks(p, &in, &out, 20, NULL);
+            in_note(&in, CLAP_EVENT_NOTE_OFF, 0, 60, 0.5);
+            process_blocks(p, &in, &out, 400, NULL);
+
+            in_param(&in, 0, 6, 4);                  /* OP1 on shape W4 */
+            in_note(&in, CLAP_EVENT_NOTE_ON, 10, 60, 0.8);
+            shaped = process_blocks(p, &in, &out, 20, NULL);
+            in_note(&in, CLAP_EVENT_NOTE_OFF, 0, 60, 0.5);
+            process_blocks(p, &in, &out, 400, NULL);
+            CHECK(params->get_value(p, 6, &v) && fabs(v - 4.0) < 1e-9, "OP1 wave reads back %f", v);
+            CHECK(fabs(shaped - plain) > 1e-3, "the waveform knob is heard (rms %.5f vs %.5f)",
+                  shaped, plain);
+
+            in_param(&in, 0, 6, 0);                  /* back to "Patch" */
+            in_note(&in, CLAP_EVENT_NOTE_ON, 10, 60, 0.8);
+            back = process_blocks(p, &in, &out, 20, NULL);
+            in_note(&in, CLAP_EVENT_NOTE_OFF, 0, 60, 0.5);
+            process_blocks(p, &in, &out, 400, NULL);
+            /* The LFO free-runs, so two renders of the same patch are close but
+             * not equal; what matters is that this is nearer the untouched
+             * render by an order of magnitude than the shaped one was. */
+            CHECK(fabs(back - plain) * 10.0 < fabs(shaped - plain),
+                  "and 'Patch' brings the sine back (rms %.5f, off by %.6f where the shape was off by %.6f)",
+                  back, fabs(back - plain), fabs(shaped - plain));
+        }
+
         /* program change via MIDI is reported back to the host */
         out.pushed = 0;
         in_midi(&in, 0, 0xC0, 3, 0);
@@ -369,15 +418,19 @@ main(int argc, char **argv)
 
         /* put the algorithm knob somewhere it can be seen to come back */
         in_param(&in, 0, 5, 19);
+        in_param(&in, 0, 7, 6);                      /* and an OP2 waveform */
         process_blocks(p, &in, &out, 1, NULL);
         params->get_value(p, 5, &alg_before);
         CHECK(fabs(alg_before - 19.0) < 1e-9, "algorithm set to 19 (%f)", alg_before);
 
         CHECK(state->save(p, &os), "state save");
-        CHECK(m.size == 16800 + 12, "state size %zu", m.size);   /* engine block plus our trailer */
+        CHECK(m.size == 17584 + 32, "state size %zu", m.size);   /* engine block plus our trailer */
         in_param(&in, 0, 4, 0);
         in_param(&in, 0, 5, 0);
+        in_param(&in, 0, 7, 0);
         process_blocks(p, &in, &out, 1, NULL);
+        params->get_value(p, 7, &v);
+        CHECK(fabs(v) < 1e-9, "OP2 waveform reset before load");
         params->get_value(p, 4, &v);
         CHECK(fabs(v) < 1e-9, "program reset before load");
         params->get_value(p, 5, &v);
@@ -388,6 +441,8 @@ main(int argc, char **argv)
         CHECK(fabs(after - before) < 1e-9, "program restored by state (%f vs %f)", after, before);
         CHECK(fabs(alg_after - alg_before) < 1e-9, "algorithm restored by state (%f vs %f)",
               alg_after, alg_before);
+        params->get_value(p, 7, &v);
+        CHECK(fabs(v - 6.0) < 1e-9, "OP2 waveform restored by state (%f)", v);
         CHECK(params->value_to_text(p, 4, 0, text, sizeof(text)) && strstr(text, "SYSX"), "bank restored by state (%s)", text);
         m.pos = 0; m.data[0] = 'Z';
         CHECK(!state->load(p, &is), "corrupt state refused");

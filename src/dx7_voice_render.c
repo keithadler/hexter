@@ -39,7 +39,8 @@
 #include "dx7_voice.h"
 
 static inline dx7_sample_t
-dx7_op_calculate_operator(dx7_sample_t eg_value, dx7_sample_t phase)
+dx7_op_calculate_operator(dx7_sample_t eg_value, dx7_sample_t phase,
+                          const dx7_sample_t *wave)
 {
     int32_t index;
     dx7_sample_t mod_index, out;
@@ -63,8 +64,8 @@ dx7_op_calculate_operator(dx7_sample_t eg_value, dx7_sample_t phase)
     /* use phase to look up the oscillator output, with interpolation */
 #ifndef HEXTER_USE_FLOATING_POINT
     index = ((uint32_t)phase >> FP_TO_SINE_SHIFT) & SINE_MASK;
-    out = dx7_voice_sin_table[index];
-    out += (((int64_t)(dx7_voice_sin_table[index + 1] - out) *
+    out = wave[index];
+    out += (((int64_t)(wave[index + 1] - out) *
              (int64_t)(phase & FP_TO_SINE_MASK)) >>
             (FP_SHIFT + FP_TO_SINE_SHIFT));
 #else /* HEXTER_USE_FLOATING_POINT */
@@ -72,8 +73,8 @@ dx7_op_calculate_operator(dx7_sample_t eg_value, dx7_sample_t phase)
     index = lrintf(phase - 0.5f);
     frac = phase - (float)index;
     index &= SINE_MASK;
-    out = dx7_voice_sin_table[index];
-    out += (dx7_voice_sin_table[index + 1] - out) * frac;
+    out = wave[index];
+    out += (wave[index + 1] - out) * frac;
 #endif /* HEXTER_USE_FLOATING_POINT */
 
     /* return the product of modulation index and oscillator output */
@@ -82,7 +83,7 @@ dx7_op_calculate_operator(dx7_sample_t eg_value, dx7_sample_t phase)
 
 static inline dx7_sample_t
 dx7_op_calculate_operator_saving_feedback(dx7_voice_t *voice, dx7_sample_t eg_value,
-                                          dx7_sample_t phase)
+                                          dx7_sample_t phase, const dx7_sample_t *wave)
 {
     int32_t index;
     dx7_sample_t mod_index, out;
@@ -108,9 +109,9 @@ dx7_op_calculate_operator_saving_feedback(dx7_voice_t *voice, dx7_sample_t eg_va
     /* use phase to look up the oscillator output, with interpolation */
 #ifndef HEXTER_USE_FLOATING_POINT
     index = ((uint32_t)phase >> FP_TO_SINE_SHIFT) & SINE_MASK;
-    out = dx7_voice_sin_table[index];
+    out = wave[index];
     out64 = out +
-            (((int64_t)(dx7_voice_sin_table[index + 1] - out) *
+            (((int64_t)(wave[index + 1] - out) *
               (int64_t)(phase & FP_TO_SINE_MASK)) >>
              (FP_SHIFT + FP_TO_SINE_SHIFT));
 #else /* HEXTER_USE_FLOATING_POINT */
@@ -118,8 +119,8 @@ dx7_op_calculate_operator_saving_feedback(dx7_voice_t *voice, dx7_sample_t eg_va
     index = lrintf(phase - 0.5f);
     frac = phase - (float)index;
     index &= SINE_MASK;
-    out = dx7_voice_sin_table[index];
-    out += (dx7_voice_sin_table[index + 1] - out) * frac;
+    out = wave[index];
+    out += (wave[index + 1] - out) * frac;
 #endif /* HEXTER_USE_FLOATING_POINT */
 
     /* save that output, scaled by our eg level, feedback amount, and a
@@ -315,23 +316,35 @@ dx7_voice_render(hexter_instance_t *instance, dx7_voice_t *voice,
             ampmod[2] = FP_MULTIPLY(i, AMPMOD2_CONSTANT);
             ampmod[1] = FP_MULTIPLY(i, AMPMOD1_CONSTANT);
 
-            output = (
-                      dx7_op_calculate_operator(voice->op[OP_3].eg.value - ampmod[voice->op[OP_3].amp_mod_sens],
-                                                voice->op[OP_3].phase +
-                                                dx7_op_calculate_operator(voice->op[OP_4].eg.value - ampmod[voice->op[OP_4].amp_mod_sens],
-                                                                          voice->op[OP_4].phase +
-                                                                          dx7_op_calculate_operator(voice->op[OP_5].eg.value - ampmod[voice->op[OP_5].amp_mod_sens],
-                                                                                                    voice->op[OP_5].phase +
-                                                                                                    /* -FIX- need to determine if amp mod is included in feedback, or after */
-                                                                                                    dx7_op_calculate_operator_saving_feedback(voice,
-                                                                                                                                              voice->op[OP_6].eg.value - ampmod[voice->op[OP_6].amp_mod_sens],
-                                                                                                                                              voice->op[OP_6].phase +
-                                                                                                                                              voice->feedback)))) +
-                      dx7_op_calculate_operator(voice->op[OP_1].eg.value - ampmod[voice->op[OP_1].amp_mod_sens],
-                                                voice->op[OP_1].phase +
-                                                dx7_op_calculate_operator(voice->op[OP_2].eg.value - ampmod[voice->op[OP_2].amp_mod_sens],
-                                                                          voice->op[OP_2].phase))
-                     );
+            /* Algorithm 1 written out, so you can see how one looks: OP6 feeds
+             * OP5 feeds OP4 feeds OP3, and OP2 feeds OP1, and the two carriers
+             * are summed. Each operator reads its own waveform, which is the
+             * sine for every DX7 patch. */
+            {
+                dx7_sample_t op6, op5, op4, op3, op2, op1;
+
+                /* -FIX- need to determine if amp mod is included in feedback, or after */
+                op6 = dx7_op_calculate_operator_saving_feedback(voice,
+                          voice->op[OP_6].eg.value - ampmod[voice->op[OP_6].amp_mod_sens],
+                          voice->op[OP_6].phase + voice->feedback, voice->op[OP_6].wave);
+                op5 = dx7_op_calculate_operator(
+                          voice->op[OP_5].eg.value - ampmod[voice->op[OP_5].amp_mod_sens],
+                          voice->op[OP_5].phase + op6, voice->op[OP_5].wave);
+                op4 = dx7_op_calculate_operator(
+                          voice->op[OP_4].eg.value - ampmod[voice->op[OP_4].amp_mod_sens],
+                          voice->op[OP_4].phase + op5, voice->op[OP_4].wave);
+                op3 = dx7_op_calculate_operator(
+                          voice->op[OP_3].eg.value - ampmod[voice->op[OP_3].amp_mod_sens],
+                          voice->op[OP_3].phase + op4, voice->op[OP_3].wave);
+                op2 = dx7_op_calculate_operator(
+                          voice->op[OP_2].eg.value - ampmod[voice->op[OP_2].amp_mod_sens],
+                          voice->op[OP_2].phase, voice->op[OP_2].wave);
+                op1 = dx7_op_calculate_operator(
+                          voice->op[OP_1].eg.value - ampmod[voice->op[OP_1].amp_mod_sens],
+                          voice->op[OP_1].phase + op2, voice->op[OP_1].wave);
+
+                output = op3 + op1;
+            }
             /* voice->volume_value contains a scaling factor for the number of carriers */
 
             /* mix voice output into output buffer */
@@ -381,8 +394,8 @@ dx7_voice_render(hexter_instance_t *instance, dx7_voice_t *voice,
         break;
 
       /* Now we'll use some macros to make it easier to read */
-#define op(_i, _p)     dx7_op_calculate_operator(voice->op[_i].eg.value - ampmod[voice->op[_i].amp_mod_sens], voice->op[_i].phase + _p)
-#define op_sfb(_i, _p) dx7_op_calculate_operator_saving_feedback(voice, voice->op[_i].eg.value - ampmod[voice->op[_i].amp_mod_sens], voice->op[_i].phase + _p)
+#define op(_i, _p)     dx7_op_calculate_operator(voice->op[_i].eg.value - ampmod[voice->op[_i].amp_mod_sens], voice->op[_i].phase + _p, voice->op[_i].wave)
+#define op_sfb(_i, _p) dx7_op_calculate_operator_saving_feedback(voice, voice->op[_i].eg.value - ampmod[voice->op[_i].amp_mod_sens], voice->op[_i].phase + _p, voice->op[_i].wave)
 
 #define RENDER \
         for (sample = 0; sample < sample_count; sample++) { \

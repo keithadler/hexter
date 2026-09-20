@@ -37,6 +37,7 @@
  * four-operator machines expressed differently, so this is a sound-alike
  * rather than a faithful copy.
  */
-void dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155);
+void dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155,
+                         uint8_t *op_wave6);
 
 #endif /* _DX7_VOICE_4OP_H */

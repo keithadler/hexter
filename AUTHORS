@@ -80,5 +80,10 @@ by a large number of DX7 and synthesis enthusiasts, including:
         four-operator one. hexter's DX21/DX27/DX100 support follows it.
         Found for us by Reaper10.
 
+    - Aaron Giles, whose ymfm (https://github.com/aaronsgiles/ymfm,
+        BSD-3-Clause, Copyright (c) 2021 Aaron Giles) works out the eight
+        operator waveforms of the four-operator Yamahas from the sine.
+        hexter's per-operator waveforms are derived the same way.
+
 Thanks everybody!  Ain't open source great?
 

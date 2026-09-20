@@ -1381,6 +1381,11 @@ dx7_voice_set_data(hexter_instance_t *instance, dx7_voice_t *voice)
         voice->op[i].fine          = limit(eb_op[19], 0, 99);
         voice->op[i].detune        = limit(eb_op[20], 0, 14);
 
+        /* the operator's shape, picked once here so the render loop just reads
+         * a pointer; 0 is the sine every DX7 patch uses */
+        voice->op[i].waveform      = instance->current_op_wave[i] % DX7_WAVEFORMS;
+        voice->op[i].wave          = dx7_voice_wave_table[voice->op[i].waveform];
+
         voice->op[i].level_scaling_bkpoint = limit(eb_op[ 8], 0, 99);
         voice->op[i].level_scaling_l_depth = limit(eb_op[ 9], 0, 99);
         voice->op[i].level_scaling_r_depth = limit(eb_op[10], 0, 99);

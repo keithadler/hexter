@@ -65,6 +65,15 @@ dx7_patchbank_parse(uint8_t *raw_patch_data, long filelength,
                     const char *filename, dx7_patch_t *firstpatch,
                     int maxpatches, char **errmsg)
 {
+    return dx7_patchbank_parse_waves(raw_patch_data, filelength, filename,
+                                     firstpatch, maxpatches, NULL, errmsg);
+}
+
+int
+dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
+                          const char *filename, dx7_patch_t *firstpatch,
+                          int maxpatches, uint8_t (*op_waves)[6], char **errmsg)
+{
     int count;
     int patchstart;
     int midshift;
@@ -130,8 +139,11 @@ dx7_patchbank_parse(uint8_t *raw_patch_data, long filelength,
             for (i = 0; i < DX_4OP_DUMP_VOICES; i++) {
                 uint8_t unpacked[DX7_VOICE_SIZE_UNPACKED];
                 uint8_t buf[DX7_VOICE_SIZE_PACKED];   /* dx7_patch_pack() must not overlap */
+                uint8_t waves[6];
 
-                dx_4op_voice_to_dx7(src + i * DX_4OP_VOICE_SIZE_PACKED, unpacked);
+                dx_4op_voice_to_dx7(src + i * DX_4OP_VOICE_SIZE_PACKED, unpacked, waves);
+                if (op_waves && count + i < maxpatches)
+                    memcpy(op_waves[count + i], waves, 6);
                 dx7_patch_pack(unpacked, (dx7_patch_t *)buf, 0);
                 memcpy(raw_patch_data + (count + i) * DX7_VOICE_SIZE_PACKED,
                        buf, DX7_VOICE_SIZE_PACKED);
@@ -286,6 +298,13 @@ int
 dx7_patchbank_load(const char *filename, dx7_patch_t *firstpatch,
                    int maxpatches, char **errmsg)
 {
+    return dx7_patchbank_load_waves(filename, firstpatch, maxpatches, NULL, errmsg);
+}
+
+int
+dx7_patchbank_load_waves(const char *filename, dx7_patch_t *firstpatch,
+                         int maxpatches, uint8_t (*op_waves)[6], char **errmsg)
+{
     FILE *fp;
     long filelength;
     unsigned char *raw_patch_data = NULL;
@@ -328,8 +347,8 @@ dx7_patchbank_load(const char *filename, dx7_patch_t *firstpatch,
     }
     fclose(fp);
 
-    count = dx7_patchbank_parse(raw_patch_data, filelength, filename,
-                                firstpatch, maxpatches, errmsg);
+    count = dx7_patchbank_parse_waves(raw_patch_data, filelength, filename,
+                                      firstpatch, maxpatches, op_waves, errmsg);
     free(raw_patch_data);
     return count;
 }

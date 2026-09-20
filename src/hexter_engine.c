@@ -355,14 +355,57 @@ int
 hexter_engine_set_bank(hexter_engine_t *instance, int first_program,
                        const uint8_t *packed, int count)
 {
+    return hexter_engine_set_bank_waves(instance, first_program, packed, count, NULL);
+}
+
+int
+hexter_engine_set_bank_waves(hexter_engine_t *instance, int first_program,
+                             const uint8_t *packed, int count,
+                             const uint8_t (*op_waves)[6])
+{
     if (first_program < 0 || first_program >= 128 || count <= 0) return 0;
     if (first_program + count > 128) count = 128 - first_program;
 
     hexter_mutex_lock(&instance->patches_mutex);
     memcpy(&instance->patches[first_program], packed, count * DX7_VOICE_SIZE_PACKED);
+    /* a DX7 bank brings none, and every operator goes back to a sine */
+    if (op_waves)
+        memcpy(&instance->patch_op_wave[first_program], op_waves, (size_t)count * 6);
+    else
+        memset(&instance->patch_op_wave[first_program], 0, (size_t)count * 6);
     refresh_current_patch(instance, first_program, count);
     hexter_mutex_unlock(&instance->patches_mutex);
     return count;
+}
+
+void
+hexter_engine_get_op_waves(const hexter_engine_t *instance, uint8_t *out6)
+{
+    memcpy(out6, instance->current_op_wave, MAX_DX7_OPERATORS);
+}
+
+void
+hexter_engine_set_op_waves(hexter_engine_t *instance, const uint8_t *in6)
+{
+    int i;
+
+    hexter_mutex_lock(&instance->voicelist_mutex);
+    hexter_mutex_lock(&instance->patches_mutex);
+
+    for (i = 0; i < MAX_DX7_OPERATORS; i++)
+        instance->current_op_wave[i] = in6[i] % DX7_WAVEFORMS;
+    hexter_instance_apply_op_waves(instance, instance->current_op_wave);
+
+    /* this is an edit, so it sticks to this program the way a patch edit does */
+    if (instance->overlay_program != instance->current_program) {
+        instance->overlay_program = instance->current_program;
+        memcpy(instance->overlay_patch_buffer, instance->current_patch_buffer,
+               DX7_VOICE_SIZE_UNPACKED);
+    }
+    memcpy(instance->overlay_op_wave, instance->current_op_wave, MAX_DX7_OPERATORS);
+
+    hexter_mutex_unlock(&instance->patches_mutex);
+    hexter_mutex_unlock(&instance->voicelist_mutex);
 }
 
 void
@@ -376,16 +419,19 @@ hexter_engine_load_bank_file(hexter_engine_t *instance, const char *path,
                              int first_program, char **errmsg)
 {
     dx7_patch_t tmp[128];
+    uint8_t waves[128][6];
     int count;
 
     if (errmsg) *errmsg = NULL;
+    memset(waves, 0, sizeof(waves));
     if (first_program < 0 || first_program >= 128) {
         if (errmsg) *errmsg = strdup("bank position out of range");
         return 0;
     }
-    count = dx7_patchbank_load(path, tmp, 128 - first_program, errmsg);
+    count = dx7_patchbank_load_waves(path, tmp, 128 - first_program, waves, errmsg);
     if (count <= 0) return 0;
-    return hexter_engine_set_bank(instance, first_program, (const uint8_t *)tmp, count);
+    return hexter_engine_set_bank_waves(instance, first_program, (const uint8_t *)tmp,
+                                        count, (const uint8_t (*)[6])waves);
 }
 
 int
@@ -394,10 +440,12 @@ hexter_engine_load_bank_memory(hexter_engine_t *instance, const uint8_t *data,
                                int first_program, char **errmsg)
 {
     dx7_patch_t tmp[128];
+    uint8_t waves[128][6];
     uint8_t *scratch;
     int count;
 
     if (errmsg) *errmsg = NULL;
+    memset(waves, 0, sizeof(waves));
     if (first_program < 0 || first_program >= 128) {
         if (errmsg) *errmsg = strdup("bank position out of range");
         return 0;
@@ -413,11 +461,12 @@ hexter_engine_load_bank_memory(hexter_engine_t *instance, const uint8_t *data,
         return 0;
     }
     memcpy(scratch, data, size);
-    count = dx7_patchbank_parse(scratch, (long)size, name_hint, tmp,
-                                128 - first_program, errmsg);
+    count = dx7_patchbank_parse_waves(scratch, (long)size, name_hint, tmp,
+                                      128 - first_program, waves, errmsg);
     free(scratch);
     if (count <= 0) return 0;
-    return hexter_engine_set_bank(instance, first_program, (const uint8_t *)tmp, count);
+    return hexter_engine_set_bank_waves(instance, first_program, (const uint8_t *)tmp,
+                                        count, (const uint8_t (*)[6])waves);
 }
 
 int
@@ -816,7 +865,12 @@ static float get_f32(const uint8_t *p) { uint32_t u = get_u32(p); float f; memcp
  *   16788 i32 polyphony
  *   16792 i32 mono mode
  *   16796 u32 reserved
- *   16800 end */
+ *   16800 end of a version 1 state
+ *   16800 per-patch operator waveforms, 128 x 6
+ *   17568 overlay operator waveforms, 6
+ *   17574 current operator waveforms, 6
+ *   17580 pad, 4
+ *   17584 end */
 
 size_t
 hexter_engine_state_save(const hexter_engine_t *instance, uint8_t *buf, size_t size)
@@ -836,18 +890,25 @@ hexter_engine_state_save(const hexter_engine_t *instance, uint8_t *buf, size_t s
     put_f32(buf + 16784, instance->volume_value);
     put_u32(buf + 16788, (uint32_t)instance->polyphony);
     put_u32(buf + 16792, (uint32_t)instance->monophonic);
+    memcpy(buf + 16800, instance->patch_op_wave, 128 * 6);
+    memcpy(buf + 17568, instance->overlay_op_wave, 6);
+    memcpy(buf + 17574, instance->current_op_wave, 6);
     return HEXTER_STATE_SIZE;
 }
 
 int
 hexter_engine_state_load(hexter_engine_t *instance, const uint8_t *buf, size_t size)
 {
-    int program, overlay;
+    int program, overlay, have_waves;
 
-    if (size < HEXTER_STATE_SIZE) return 0;
+    if (size < HEXTER_STATE_SIZE_V1) return 0;
     if (memcmp(buf, STATE_MAGIC, 4) != 0) return 0;
     if (get_u32(buf + 4) != STATE_VERSION) return 0;
-    if (get_u32(buf + 8) < HEXTER_STATE_SIZE - 12) return 0;
+    if (get_u32(buf + 8) < HEXTER_STATE_SIZE_V1 - 12) return 0;
+
+    /* a state saved before the operator waveforms existed simply stops short */
+    have_waves = (size >= HEXTER_STATE_SIZE &&
+                  get_u32(buf + 8) >= HEXTER_STATE_SIZE - 12);
 
     program = (int)get_u32(buf + 16460);
     overlay = (int)get_u32(buf + 16464);
@@ -863,9 +924,21 @@ hexter_engine_state_load(hexter_engine_t *instance, const uint8_t *buf, size_t s
     hexter_instance_set_performance_data(instance);
     instance->overlay_program = overlay;
     memcpy(instance->overlay_patch_buffer, buf + 16468, DX7_VOICE_SIZE_UNPACKED);
+    if (have_waves) {
+        memcpy(instance->patch_op_wave, buf + 16800, 128 * 6);
+        memcpy(instance->overlay_op_wave, buf + 17568, 6);
+    } else {
+        memset(instance->patch_op_wave, 0, 128 * 6);
+        memset(instance->overlay_op_wave, 0, 6);
+    }
     instance->pending_program_change = -1;
     hexter_instance_select_program(instance, 0, program);
     memcpy(instance->current_patch_buffer, buf + 16623, DX7_VOICE_SIZE_UNPACKED);
+    /* after the program change, which chooses waveforms of its own */
+    if (have_waves)
+        memcpy(instance->current_op_wave, buf + 17574, 6);
+    else
+        memset(instance->current_op_wave, 0, 6);
 
     instance->tuning_value = clampf(get_f32(buf + 16780), HEXTER_ENGINE_TUNING_MIN, HEXTER_ENGINE_TUNING_MAX);
     instance->volume_value = clampf(get_f32(buf + 16784), HEXTER_ENGINE_VOLUME_MIN, HEXTER_ENGINE_VOLUME_MAX);

@@ -97,6 +97,7 @@ static uint8_t notify_buf[4096];
 static float out_buf[BLOCK];
 static float tuning = 440.0f, volume = 0.0f, polyphony = 10.0f, mono = 0.0f, program = 0.0f;
 static float algorithm = 0.0f;   /* "Patch" */
+static float op_wave[6] = { 0, 0, 0, 0, 0, 0 };   /* the same for each operator */
 
 static LV2_Atom_Forge forge;
 static LV2_Atom_Forge_Frame seq_frame;
@@ -252,7 +253,7 @@ main(int argc, char **argv)
     CHECK(plugin != NULL, "bundle %s contains %s", bundle, HEXTER_URI);
     if (!plugin) return 1;
 
-    CHECK(lilv_plugin_get_num_ports(plugin) == 9, "9 ports, have %u", lilv_plugin_get_num_ports(plugin));
+    CHECK(lilv_plugin_get_num_ports(plugin) == 15, "15 ports, have %u", lilv_plugin_get_num_ports(plugin));
     {
         LilvNode *name = lilv_plugin_get_name(plugin);
         CHECK(name && !strcmp(lilv_node_as_string(name), "hexter"), "plugin name");
@@ -285,6 +286,11 @@ main(int argc, char **argv)
     lilv_instance_connect_port(inst, 6, &mono);
     lilv_instance_connect_port(inst, 7, &program);
     lilv_instance_connect_port(inst, 8, &algorithm);
+    {
+        int wi;
+        for (wi = 0; wi < 6; wi++)
+            lilv_instance_connect_port(inst, (uint32_t)(9 + wi), &op_wave[wi]);
+    }
     lilv_instance_activate(inst);
 
     /* play a chord on the default bank */
@@ -388,7 +394,7 @@ main(int argc, char **argv)
 
         CHECK(state_iface->save(lilv_instance_get_handle(inst), store, NULL, LV2_STATE_IS_POD, features) == LV2_STATE_SUCCESS, "state save");
         v = retrieve(NULL, urid_state, &size, &type, &flags);
-        CHECK(v && size == 16800 && type == urid_atom_Chunk, "state chunk stored (%zu bytes)", size);
+        CHECK(v && size == 17584 && type == urid_atom_Chunk, "state chunk stored (%zu bytes)", size);
         v = retrieve(NULL, urid_bank, &size, &type, &flags);
         CHECK(v && type == urid_atom_Path && !strcmp((const char *)v, bank_path), "bank path stored");
 
@@ -500,6 +506,47 @@ main(int argc, char **argv)
         CHECK(memcmp(patch_pass, restored, sizeof(patch_pass)) == 0,
               "Patch puts the patch's own algorithm back");
         ALG_OFF();
+
+        /* and the waveform ports, checked the same way and for the same reason */
+        {
+            static float sine_pass[BLOCK * 20], shaped[BLOCK * 20];
+            static float wheld_same[BLOCK * 20], wheld_moved[BLOCK * 20], wrestored[BLOCK * 20];
+
+            algorithm = 0.0f;
+            op_wave[0] = 0.0f;
+            ALG_RESET();
+            ALG_NOTE(); run_blocks(inst, 20, sine_pass, BLOCK * 20);
+            ALG_OFF();
+
+            op_wave[0] = 4.0f;                     /* OP1 on shape W4 */
+            ALG_RESET();
+            ALG_NOTE(); run_blocks(inst, 20, shaped, BLOCK * 20);
+            CHECK(memcmp(sine_pass, shaped, sizeof(sine_pass)) != 0,
+                  "the OP1 waveform port changes the output");
+            ALG_OFF();
+
+            op_wave[0] = 0.0f;
+            ALG_RESET();
+            ALG_NOTE(); run_blocks(inst, 20, NULL, 0);
+            run_blocks(inst, 20, wheld_same, BLOCK * 20);
+            ALG_OFF();
+
+            op_wave[0] = 0.0f;
+            ALG_RESET();
+            ALG_NOTE(); run_blocks(inst, 20, NULL, 0);
+            op_wave[0] = 6.0f;                     /* moved halfway through */
+            run_blocks(inst, 20, wheld_moved, BLOCK * 20);
+            CHECK(memcmp(wheld_same, wheld_moved, sizeof(wheld_same)) != 0,
+                  "a waveform change is heard under a held note");
+            ALG_OFF();
+
+            op_wave[0] = 0.0f;                     /* back to Patch */
+            ALG_RESET();
+            ALG_NOTE(); run_blocks(inst, 20, wrestored, BLOCK * 20);
+            CHECK(memcmp(sine_pass, wrestored, sizeof(sine_pass)) == 0,
+                  "Patch puts the patch's own waveform back");
+            ALG_OFF();
+        }
 #undef ALG_RESET
 #undef ALG_NOTE
 #undef ALG_OFF

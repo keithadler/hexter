@@ -462,7 +462,7 @@ test_algorithm(void)
 
 /* Build a DX21/DX27/DX100 32-voice dump with known values in it. */
 static size_t
-build_4op_dump(uint8_t *out, size_t cap, uint8_t format)
+build_4op_dump(uint8_t *out, size_t cap, uint8_t format, int waves)
 {
     static const char *names[2] = { "FOUR OP 1 ", "FOUR OP 2 " };
     size_t n = 0;
@@ -495,6 +495,14 @@ build_4op_dump(uint8_t *out, size_t cap, uint8_t format)
         memcpy(p + 57, names[v & 1], 10);
         p[67] = p[68] = p[69] = 99;         /* pitch envelope at rest */
         p[70] = p[71] = p[72] = 50;
+        if (waves) {
+            /* the TX81Z extras: an operator waveform in bits 6-4, one byte
+             * each, a different shape per operator so the routing shows */
+            p[80] = 3 << 4;                 /* OP1 */
+            p[76] = 5 << 4;                 /* OP2 */
+            p[78] = 1 << 4;                 /* OP3 */
+            p[74] = 7 << 4;                 /* OP4 */
+        }
     }
     for (i = 0; i < 4096; i++) sum += out[n + i];
     n += 4096;
@@ -514,7 +522,7 @@ test_4op_bank(void)
     size_t len;
     int n;
 
-    len = build_4op_dump(dump, sizeof(dump), 0x03);
+    len = build_4op_dump(dump, sizeof(dump), 0x03, 0);
     CHECK(len == 6 + 4096 + 2, "built a %zu byte four-operator dump", len);
 
     n = hexter_engine_load_bank_memory(e, dump, len, "dx100.syx", 0, &err);
@@ -525,7 +533,7 @@ test_4op_bank(void)
     {
         static uint8_t tx[6 + 4096 + 2];
         hexter_engine_t *t = hexter_engine_new(44100.0f);
-        size_t tlen = build_4op_dump(tx, sizeof(tx), 0x04);
+        size_t tlen = build_4op_dump(tx, sizeof(tx), 0x04, 0);
         char *terr = NULL;
         int tn = hexter_engine_load_bank_memory(t, tx, tlen, "tx81z.syx", 0, &terr);
         CHECK(tn == 32, "TX81Z dump loaded %d voices (%s)", tn, terr ? terr : "no error");
@@ -587,6 +595,172 @@ test_4op_bank(void)
     hexter_engine_free(e);
 }
 
+/* ---- operator waveforms ---- */
+
+/*
+ * Render one note on a brand new engine. It has to be a new engine: renders
+ * on one engine are not bit-identical to each other, so comparing two of them
+ * would show a difference whatever the waveforms did. Two fresh engines given
+ * the same work do agree, which test_determinism_and_rom already checks.
+ */
+static void
+render_with_waves(const uint8_t *w6, unsigned long program, float *out, uint32_t frames)
+{
+    hexter_engine_t *e = hexter_engine_new(44100.0f);
+    hexter_event_t note;
+
+    hexter_engine_load_bank_file(e, bank_path("dx7_roms.dx7"), 0, NULL);
+    hexter_engine_select_program(e, program);
+    if (w6) hexter_engine_set_op_waves(e, w6);
+
+    memset(&note, 0, sizeof(note));
+    note.type = HEXTER_EV_NOTE_ON; note.a = 60; note.b = 100;
+    render_seconds(e, out, frames, &note, 1);
+    hexter_engine_free(e);
+}
+
+static void
+test_op_waveforms(void)
+{
+    hexter_engine_t *e = hexter_engine_new(44100.0f);
+    static float sine[8820], shaped[8820], again[8820], each[DX7_WAVEFORMS][2048];
+    uint8_t waves[6], got[6];
+    char *err = NULL;
+    double peak = 0.0;
+    int i, w, x, distinct = 0;
+
+    CHECK(hexter_engine_load_bank_file(e, bank_path("dx7_roms.dx7"), 0, &err) == 128,
+          "load ROM for waveforms");
+    free(err); err = NULL;
+
+    /* a DX7 patch is all sines and says so */
+    hexter_engine_select_program(e, 0);
+    hexter_engine_get_op_waves(e, got);
+    for (i = 0; i < 6; i++) if (got[i] != 0) break;
+    CHECK(i == 6, "a DX7 patch starts out all sines");
+
+    /* one non-sine operator changes the sound */
+    memset(waves, 0, sizeof(waves));
+    waves[0] = 1;                       /* OP1, a carrier in algorithm 1 */
+    hexter_engine_set_op_waves(e, waves);
+    hexter_engine_get_op_waves(e, got);
+    CHECK(got[0] == 1 && got[1] == 0, "the waveform reads back (%d, %d)", got[0], got[1]);
+
+    render_with_waves(NULL, 0, sine, 8820);
+    render_with_waves(waves, 0, shaped, 8820);
+    CHECK(memcmp(sine, shaped, sizeof(sine)) != 0,
+          "a non-sine operator changes the rendered sound");
+    for (i = 0; i < 8820; i++) if (fabs(shaped[i]) > peak) peak = fabs(shaped[i]);
+    CHECK(peak > 0.01, "and it still makes a sound (peak %.4f)", peak);
+
+    /* Asking for shape 0 reproduces the untouched render exactly, so the
+     * difference above came from the waveform and not from having set one. */
+    memset(waves, 0, sizeof(waves));
+    render_with_waves(waves, 0, again, 8820);
+    CHECK(!memcmp(sine, again, sizeof(sine)), "shape 0 renders exactly as before");
+
+    /* all eight shapes differ from one another */
+    for (w = 0; w < DX7_WAVEFORMS; w++) {
+        for (i = 0; i < 6; i++) waves[i] = (uint8_t)w;
+        render_with_waves(waves, 0, each[w], 2048);
+    }
+    for (w = 0; w < DX7_WAVEFORMS; w++)
+        for (x = w + 1; x < DX7_WAVEFORMS; x++)
+            if (memcmp(each[w], each[x], sizeof(each[0])) != 0) distinct++;
+    CHECK(distinct == DX7_WAVEFORMS * (DX7_WAVEFORMS - 1) / 2,
+          "the eight shapes all sound different (%d of %d pairs)",
+          distinct, DX7_WAVEFORMS * (DX7_WAVEFORMS - 1) / 2);
+
+    /* an out-of-range shape wraps rather than reading off the end of the table */
+    memset(waves, 0, sizeof(waves));
+    waves[2] = 200;
+    hexter_engine_set_op_waves(e, waves);
+    hexter_engine_get_op_waves(e, got);
+    CHECK(got[2] == 200 % DX7_WAVEFORMS, "shape 200 became %d", got[2]);
+
+    /* the waveforms belong to the program, so switching away and back keeps
+     * the edit, and a different program is untouched by it */
+    memset(waves, 0, sizeof(waves));
+    waves[0] = 4;
+    hexter_engine_select_program(e, 5);
+    hexter_engine_set_op_waves(e, waves);
+    hexter_engine_select_program(e, 6);
+    hexter_engine_get_op_waves(e, got);
+    CHECK(got[0] == 0, "program 6 is unaffected (%d)", got[0]);
+    hexter_engine_select_program(e, 5);
+    hexter_engine_get_op_waves(e, got);
+    CHECK(got[0] == 4, "program 5 kept its waveform (%d)", got[0]);
+
+    /* and a change is heard under a note that is already down */
+    {
+        hexter_engine_t *h1 = hexter_engine_new(44100.0f);
+        hexter_engine_t *h2 = hexter_engine_new(44100.0f);
+        static float held[11025], moved[11025];
+        hexter_event_t note;
+        uint8_t w6[6];
+
+        hexter_engine_load_bank_file(h1, bank_path("dx7_roms.dx7"), 0, NULL);
+        hexter_engine_load_bank_file(h2, bank_path("dx7_roms.dx7"), 0, NULL);
+        memset(&note, 0, sizeof(note));
+        note.type = HEXTER_EV_NOTE_ON; note.a = 60; note.b = 100;
+        render_seconds(h1, held, 5512, &note, 1);
+        render_seconds(h2, moved, 5512, &note, 1);
+        CHECK(!memcmp(held, moved, sizeof(float) * 5512), "the same note starts the same in both");
+
+        memset(w6, 0, sizeof(w6));
+        w6[0] = 2;
+        hexter_engine_set_op_waves(h2, w6);
+        render_seconds(h1, held + 5512, 5513, NULL, 0);
+        render_seconds(h2, moved + 5512, 5513, NULL, 0);
+        CHECK(memcmp(held + 5512, moved + 5512, sizeof(float) * 5513) != 0,
+              "a waveform change is heard under a held note");
+        hexter_engine_free(h1);
+        hexter_engine_free(h2);
+    }
+
+    hexter_engine_free(e);
+
+    /* a TX81Z bank carries a waveform per operator, and the conversion has to
+     * put each one on the DX7 operator that four-operator one became */
+    {
+        hexter_engine_t *t = hexter_engine_new(44100.0f);
+        static uint8_t tx[6 + 4096 + 2];
+        size_t tlen = build_4op_dump(tx, sizeof(tx), 0x04, 1);
+        char *terr = NULL;
+
+        CHECK(hexter_engine_load_bank_memory(t, tx, tlen, "tx81z.syx", 0, &terr) == 32,
+              "loaded a TX81Z bank with waveforms (%s)", terr ? terr : "no error");
+        free(terr);
+        hexter_engine_select_program(t, 0);
+        hexter_engine_get_op_waves(t, got);
+        /* algorithm 2 sends four-operator OP1-OP4 to DX7 4, 5, 3, 6, and the
+         * shapes written into the dump were OP1 3, OP2 5, OP3 1, OP4 7 */
+        CHECK(got[3] == 3, "OP1's shape reached DX7 OP4 (%d)", got[3]);
+        CHECK(got[4] == 5, "OP2's shape reached DX7 OP5 (%d)", got[4]);
+        CHECK(got[2] == 1, "OP3's shape reached DX7 OP3 (%d)", got[2]);
+        CHECK(got[5] == 7, "OP4's shape reached DX7 OP6 (%d)", got[5]);
+        CHECK(got[0] == 0 && got[1] == 0, "the two spare operators stay sines");
+        hexter_engine_free(t);
+    }
+
+    /* a DX100 bank has nothing in those bytes, so every operator is a sine */
+    {
+        hexter_engine_t *t = hexter_engine_new(44100.0f);
+        static uint8_t dx[6 + 4096 + 2];
+        size_t dlen = build_4op_dump(dx, sizeof(dx), 0x03, 0);
+        char *derr = NULL;
+
+        CHECK(hexter_engine_load_bank_memory(t, dx, dlen, "dx100.syx", 0, &derr) == 32,
+              "loaded a DX100 bank (%s)", derr ? derr : "no error");
+        free(derr);
+        hexter_engine_select_program(t, 0);
+        hexter_engine_get_op_waves(t, got);
+        for (i = 0; i < 6; i++) if (got[i] != 0) break;
+        CHECK(i == 6, "a DX100 bank is all sines");
+        hexter_engine_free(t);
+    }
+}
+
 /* ---- state ---- */
 
 static void
@@ -606,6 +780,10 @@ test_state(void)
     hexter_engine_set_mono_mode(a, HEXTER_MONO_ONCE);
     hexter_engine_select_program(a, 17);
     hexter_engine_set_voice_parameter(a, 121, 42);
+    {
+        uint8_t w[6] = { 1, 0, 6, 0, 3, 0 };
+        hexter_engine_set_op_waves(a, w);
+    }
 
     CHECK(hexter_engine_state_save(a, state, sizeof(state)) == HEXTER_STATE_SIZE, "state save size");
     CHECK(hexter_engine_state_save(a, state, 10) == 0, "state save refuses a small buffer");
@@ -623,11 +801,40 @@ test_state(void)
     hexter_engine_get_current_patch(a, c1); hexter_engine_get_current_patch(b, c2);
     CHECK(!memcmp(c1, c2, 155) && c2[121] == 42, "edit buffer restored (OP1 level %d)", c2[121]);
 
+    {
+        uint8_t wa[6], wb[6];
+        hexter_engine_get_op_waves(a, wa); hexter_engine_get_op_waves(b, wb);
+        CHECK(!memcmp(wa, wb, 6) && wb[2] == 6,
+              "operator waveforms restored (OP3 shape %d)", wb[2]);
+    }
+
     memset(&ev, 0, sizeof(ev));
     ev.type = HEXTER_EV_NOTE_ON; ev.a = 60; ev.b = 100;
     hexter_engine_render(a, oa, 1024, &ev, 1);
     hexter_engine_render(b, ob, 1024, &ev, 1);
     CHECK(!memcmp(oa, ob, sizeof(oa)), "restored engine renders identically");
+
+    /* a state written before the operator waveforms existed stops at the old
+     * length and says so in its payload field; it still loads, all sines */
+    {
+        hexter_engine_t *c = hexter_engine_new(48000.0f);
+        static uint8_t old_state[HEXTER_STATE_SIZE_V1];
+        uint8_t wc[6];
+        int i;
+
+        memcpy(old_state, state, HEXTER_STATE_SIZE_V1);
+        old_state[8]  = (HEXTER_STATE_SIZE_V1 - 12) & 0xff;
+        old_state[9]  = ((HEXTER_STATE_SIZE_V1 - 12) >> 8) & 0xff;
+        old_state[10] = old_state[11] = 0;
+        CHECK(hexter_engine_state_load(c, old_state, sizeof(old_state)),
+              "a version 1 state still loads");
+        CHECK(hexter_engine_get_program(c) == 17, "and restores its program (%d)",
+              hexter_engine_get_program(c));
+        hexter_engine_get_op_waves(c, wc);
+        for (i = 0; i < 6; i++) if (wc[i] != 0) break;
+        CHECK(i == 6, "with every operator a sine");
+        hexter_engine_free(c);
+    }
 
     /* rejects junk */
     state[0] = 'X';
@@ -768,6 +975,7 @@ main(int argc, char **argv)
     test_sysex();
     test_algorithm();
     test_4op_bank();
+    test_op_waveforms();
     test_state();
     test_voices();
     test_sample_rates();

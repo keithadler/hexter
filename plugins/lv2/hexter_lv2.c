@@ -56,7 +56,8 @@ enum {
     PORT_MONO_MODE,
     PORT_PROGRAM,
     PORT_ALGORITHM,
-    PORT_COUNT
+    PORT_OP1_WAVE,                    /* six in a row, OP1 through OP6 */
+    PORT_COUNT = PORT_OP1_WAVE + HEXTER_OPERATORS
 };
 
 typedef struct {
@@ -93,6 +94,7 @@ typedef struct {
     const float             *mono_mode;
     const float             *program;
     const float             *algorithm;
+    const float             *op_wave[HEXTER_OPERATORS];
 
     LV2_URID_Map            *map;
     LV2_Worker_Schedule     *schedule;
@@ -104,6 +106,10 @@ typedef struct {
     float last_tuning, last_volume;
     int   last_polyphony, last_mono, last_program, last_algorithm;
     int   algorithm_saved;   /* the patch's own algorithm under an override, else -1 */
+    int     last_op_wave[HEXTER_OPERATORS];      /* 0 = as the patch says, 1-8 = shape */
+    uint8_t op_wave_saved[HEXTER_OPERATORS];     /* the patch's own shapes, under an override */
+    uint8_t op_wave_pushed[HEXTER_OPERATORS];    /* what was last handed to the engine */
+    int     op_wave_overriding;
     char  bank_path[PATH_MAX_LEN];
     int   bank_notify_pending;   /* work_response happened; announce in the next run() */
 
@@ -164,6 +170,10 @@ instantiate(const LV2_Descriptor *descriptor, double rate,
     h->last_program = hexter_engine_get_program(h->engine);
     h->last_algorithm = 0;      /* "Patch" */
     h->algorithm_saved = -1;
+    memset(h->last_op_wave, 0, sizeof(h->last_op_wave));      /* and the same for the shapes */
+    memset(h->op_wave_saved, 0, sizeof(h->op_wave_saved));
+    memset(h->op_wave_pushed, 0, sizeof(h->op_wave_pushed));
+    h->op_wave_overriding = 0;
     return (LV2_Handle)h;
 }
 
@@ -182,7 +192,10 @@ connect_port(LV2_Handle instance, uint32_t port, void *data)
       case PORT_MONO_MODE: h->mono_mode = (const float *)data; break;
       case PORT_PROGRAM:   h->program = (const float *)data; break;
       case PORT_ALGORITHM: h->algorithm = (const float *)data; break;
-      default: break;
+      default:
+        if (port >= PORT_OP1_WAVE && port < PORT_OP1_WAVE + HEXTER_OPERATORS)
+            h->op_wave[port - PORT_OP1_WAVE] = (const float *)data;
+        break;
     }
 }
 
@@ -285,6 +298,40 @@ run(LV2_Handle instance, uint32_t nframes)
                 h->algorithm_saved = -1;
             }
             h->last_algorithm = a;
+        }
+    }
+    {
+        /* The waveform ports work the same way: 0 leaves that operator with
+         * whatever the bank gave it, which for a TX81Z patch is a shape of
+         * its own, and 1 to 8 pick one. */
+        int i, moved = 0, any = 0;
+        for (i = 0; i < HEXTER_OPERATORS; i++) {
+            int w = h->op_wave[i] ? (int)lrintf(*h->op_wave[i]) : 0;
+            if (w < 0) w = 0;
+            if (w > HEXTER_OP_WAVEFORMS) w = HEXTER_OP_WAVEFORMS;
+            if (w != h->last_op_wave[i]) moved = 1;
+            h->last_op_wave[i] = w;
+            if (w) any = 1;
+        }
+        if (moved) {
+            uint8_t now[HEXTER_OPERATORS], want[HEXTER_OPERATORS];
+            hexter_engine_get_op_waves(h->engine, now);
+            if (any) {
+                if (!h->op_wave_overriding) {
+                    memcpy(h->op_wave_saved, now, HEXTER_OPERATORS);
+                    h->op_wave_overriding = 1;
+                }
+                for (i = 0; i < HEXTER_OPERATORS; i++)
+                    want[i] = h->last_op_wave[i] ? (uint8_t)(h->last_op_wave[i] - 1)
+                                                 : h->op_wave_saved[i];
+                hexter_engine_set_op_waves(h->engine, want);
+                memcpy(h->op_wave_pushed, want, HEXTER_OPERATORS);
+            } else if (h->op_wave_overriding) {
+                /* only undo our own edit, as above */
+                if (!memcmp(now, h->op_wave_pushed, HEXTER_OPERATORS))
+                    hexter_engine_set_op_waves(h->engine, h->op_wave_saved);
+                h->op_wave_overriding = 0;
+            }
         }
     }
 

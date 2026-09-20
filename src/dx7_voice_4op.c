@@ -93,12 +93,21 @@ dx7_op_base(int op)          /* op is 1 to 6 */
     return (6 - op) * 21;
 }
 
+/*
+ * A TX81Z packs its extras into the bytes a DX21 leaves empty, and the operator
+ * waveform is three bits of one of them. A DX21, DX27 or DX100 voice has zeros
+ * there, which reads as waveform 0, the sine, which is what those machines have.
+ */
+static const int wave_byte[4] = { 80, 76, 78, 74 };   /* OP1, OP2, OP3, OP4 */
+
 void
-dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155)
+dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155,
+                    uint8_t *op_wave6)
 {
     int i, alg, op;
 
     memset(unpacked155, 0, DX7_VOICE_SIZE_UNPACKED);
+    if (op_wave6) memset(op_wave6, 0, 6);
 
     alg = packed128[V_ALG_FB_SYNC] & 0x07;
 
@@ -138,6 +147,11 @@ dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155)
         o[19] = freq_map[freq].fine;
         /* detune is -3..+3 either way, but the DX7 centers it at 7 */
         o[20] = clamp((s[OP_KSR_DETUNE] & 0x07) + 4, 0, 14);
+
+        if (op_wave6) {
+            int dx7_op = algorithm_map[alg].dx7_op[i];        /* 1 to 6 */
+            op_wave6[dx7_op - 1] = (packed128[wave_byte[i]] >> 4) & 0x07;
+        }
     }
 
     /* pitch envelope: three rates and three levels become four of each */

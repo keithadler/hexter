@@ -81,6 +81,15 @@ struct _hexter_instance_t
     int             current_program;
     uint8_t         current_patch_buffer[DX7_VOICE_SIZE_UNPACKED];  /* current unpacked patch in use */
 
+    /*
+     * Operator waveforms, which the DX7's own patch format has no room for, so
+     * they ride alongside it. All zero means every operator is a sine, which is
+     * a DX7 and is what everything but a converted four-operator bank gets.
+     */
+    uint8_t         patch_op_wave[128][6];   /* 6 is MAX_DX7_OPERATORS, which */
+    uint8_t         current_op_wave[6];      /* dx7_voice.h defines and this    */
+    uint8_t         overlay_op_wave[6];      /* header cannot see from here     */
+
     int             overlay_program;   /* program to which 'configure edit_buffer' patch applies, or -1 */
     uint8_t         overlay_patch_buffer[DX7_VOICE_SIZE_UNPACKED];  /* 'configure edit_buffer' patch */
 
@@ -153,6 +162,7 @@ void  hexter_instance_control_change(hexter_instance_t *instance,
 void  hexter_instance_apply_op_param(hexter_instance_t *instance, int opnum,
                                      int param, signed int value);
 void  hexter_instance_apply_algorithm(hexter_instance_t *instance, int algorithm);
+void hexter_instance_apply_op_waves(hexter_instance_t *instance, const uint8_t *wave6);
 void  hexter_instance_channel_pressure(hexter_instance_t *instance,
                                        signed int pressure);
 void  hexter_instance_pitch_bend(hexter_instance_t *instance, signed int value);

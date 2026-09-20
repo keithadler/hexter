@@ -122,6 +122,20 @@ void  hexter_engine_get_patch(const hexter_engine_t *e, int program, uint8_t *pa
 void  hexter_engine_set_patch(hexter_engine_t *e, int program, const uint8_t *packed128);
 /* copy 'count' packed patches into the bank starting at first_program; returns count stored */
 int   hexter_engine_set_bank(hexter_engine_t *e, int first_program, const uint8_t *packed, int count);
+/* the same, with each patch's operator waveforms; NULL means plain sines */
+int   hexter_engine_set_bank_waves(hexter_engine_t *e, int first_program,
+                                   const uint8_t *packed, int count,
+                                   const uint8_t (*op_waves)[6]);
+/*
+ * The operator waveforms of the sounding patch: one per operator, 0 being the
+ * sine a DX7 has and 1 to 7 the other shapes the four-operator machines from
+ * the TX81Z on can pick. A change is heard on notes already held, and it
+ * belongs to the selected program, so a program change replaces it.
+ */
+#define HEXTER_OPERATORS    6
+#define HEXTER_OP_WAVEFORMS 8
+void  hexter_engine_get_op_waves(const hexter_engine_t *e, uint8_t *out6);
+void  hexter_engine_set_op_waves(hexter_engine_t *e, const uint8_t *in6);
 void  hexter_engine_get_bank(const hexter_engine_t *e, uint8_t *packed_out);  /* 128 * 128 bytes */
 /* load a bank file (.syx, .dx7, .mid, .tx7, .snd, .bnk, .dx2, raw) into the bank
  * at first_program; returns patches loaded, 0 on error with *errmsg set
@@ -166,7 +180,11 @@ void  hexter_engine_render(hexter_engine_t *e, float *out, uint32_t nframes,
                            const hexter_event_t *events, uint32_t nevents);
 
 /* ---- state, for host save/restore ---- */
-#define HEXTER_STATE_SIZE  16800
+/* The operator waveforms were added after the first release, as a section on
+ * the end, so a state saved by an older hexter still loads: it simply has no
+ * waveforms in it and every operator comes back a sine. */
+#define HEXTER_STATE_SIZE_V1  16800
+#define HEXTER_STATE_SIZE     17584
 /* writes exactly HEXTER_STATE_SIZE bytes; returns bytes written or 0 */
 size_t hexter_engine_state_save(const hexter_engine_t *e, uint8_t *buf, size_t size);
 /* returns 1 on success */

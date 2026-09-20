@@ -1,6 +1,29 @@
 # Changelog
 
-## 2.5.1 (2026-09-20)
+## 2.6.0 (2026-09-19)
+
+### Added
+- **A waveform for each operator.** A DX7 operator can only play a sine; the four-operator
+  machines from the TX81Z on can pick one of eight shapes, and that is most of why those
+  synths sound like themselves rather than like a small DX7. hexter now gives all six
+  operators the same choice, as six parameters, **OP1 wave** through **OP6 wave**. Each one
+  rests at **Patch** and leaves that operator alone; W1 is the sine hexter has always
+  played, and W2 to W8 are the other seven shapes, derived the way
+  [ymfm](https://github.com/aaronsgiles/ymfm) derives them (BSD-3-Clause, credited in
+  AUTHORS). Like the algorithm knob it is an override, heard on notes already held, undone
+  by a program change, and saved with your session.
+- **TX81Z banks bring their waveforms with them.** A TX81Z voice carries a shape per
+  operator in bytes hexter used to throw away. They are read now and each lands on the DX7
+  operator that four-operator one became. A DX21, DX27 or DX100 bank has nothing in those
+  bytes, so it stays all sines, as that hardware is.
+
+### Unchanged
+- **Every DX7 patch sounds exactly as it did.** Shape W1 is the same table hexter has used
+  since the beginning, and a check against a build of the previous release renders five ROM
+  patches byte for byte identically. A session saved by an older hexter still loads; it
+  simply has no waveforms in it and every operator comes back a sine.
+
+## 2.5.1 (2026-09-19)
 
 ### Fixed
 - The Linux standalone in 2.5.0 linked JACK, which means it refuses to start at all on a

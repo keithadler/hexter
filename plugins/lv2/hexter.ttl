@@ -117,4 +117,118 @@ hex:bank
         lv2:minimum 0 ;
         lv2:maximum 32 ;
         lv2:scalePoint [ rdfs:label "Patch" ; rdf:value 0 ]
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 9 ;
+        lv2:symbol "op1_wave" ;
+        lv2:name "OP1 wave" ;
+        rdfs:comment "The waveform operator 1 plays: 1 is the sine a DX7 has, 2 to 8 the other shapes the TX81Z and its relatives can pick. At 0 the operator keeps whatever the patch gave it, which for a converted TX81Z voice is a shape of its own. Moving it is heard on notes already held; selecting a program brings the patch's own shapes back." ;
+        lv2:portProperty lv2:integer ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 8 ;
+        lv2:scalePoint [ rdfs:label "Patch" ; rdf:value 0 ] ,
+                       [ rdfs:label "W1 sine" ; rdf:value 1 ] ,
+                       [ rdfs:label "W2" ; rdf:value 2 ] ,
+                       [ rdfs:label "W3" ; rdf:value 3 ] ,
+                       [ rdfs:label "W4" ; rdf:value 4 ] ,
+                       [ rdfs:label "W5" ; rdf:value 5 ] ,
+                       [ rdfs:label "W6" ; rdf:value 6 ] ,
+                       [ rdfs:label "W7" ; rdf:value 7 ] ,
+                       [ rdfs:label "W8" ; rdf:value 8 ]
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 10 ;
+        lv2:symbol "op2_wave" ;
+        lv2:name "OP2 wave" ;
+        rdfs:comment "The waveform operator 2 plays: 1 is the sine a DX7 has, 2 to 8 the other shapes the TX81Z and its relatives can pick. At 0 the operator keeps whatever the patch gave it, which for a converted TX81Z voice is a shape of its own. Moving it is heard on notes already held; selecting a program brings the patch's own shapes back." ;
+        lv2:portProperty lv2:integer ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 8 ;
+        lv2:scalePoint [ rdfs:label "Patch" ; rdf:value 0 ] ,
+                       [ rdfs:label "W1 sine" ; rdf:value 1 ] ,
+                       [ rdfs:label "W2" ; rdf:value 2 ] ,
+                       [ rdfs:label "W3" ; rdf:value 3 ] ,
+                       [ rdfs:label "W4" ; rdf:value 4 ] ,
+                       [ rdfs:label "W5" ; rdf:value 5 ] ,
+                       [ rdfs:label "W6" ; rdf:value 6 ] ,
+                       [ rdfs:label "W7" ; rdf:value 7 ] ,
+                       [ rdfs:label "W8" ; rdf:value 8 ]
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 11 ;
+        lv2:symbol "op3_wave" ;
+        lv2:name "OP3 wave" ;
+        rdfs:comment "The waveform operator 3 plays: 1 is the sine a DX7 has, 2 to 8 the other shapes the TX81Z and its relatives can pick. At 0 the operator keeps whatever the patch gave it, which for a converted TX81Z voice is a shape of its own. Moving it is heard on notes already held; selecting a program brings the patch's own shapes back." ;
+        lv2:portProperty lv2:integer ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 8 ;
+        lv2:scalePoint [ rdfs:label "Patch" ; rdf:value 0 ] ,
+                       [ rdfs:label "W1 sine" ; rdf:value 1 ] ,
+                       [ rdfs:label "W2" ; rdf:value 2 ] ,
+                       [ rdfs:label "W3" ; rdf:value 3 ] ,
+                       [ rdfs:label "W4" ; rdf:value 4 ] ,
+                       [ rdfs:label "W5" ; rdf:value 5 ] ,
+                       [ rdfs:label "W6" ; rdf:value 6 ] ,
+                       [ rdfs:label "W7" ; rdf:value 7 ] ,
+                       [ rdfs:label "W8" ; rdf:value 8 ]
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 12 ;
+        lv2:symbol "op4_wave" ;
+        lv2:name "OP4 wave" ;
+        rdfs:comment "The waveform operator 4 plays: 1 is the sine a DX7 has, 2 to 8 the other shapes the TX81Z and its relatives can pick. At 0 the operator keeps whatever the patch gave it, which for a converted TX81Z voice is a shape of its own. Moving it is heard on notes already held; selecting a program brings the patch's own shapes back." ;
+        lv2:portProperty lv2:integer ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 8 ;
+        lv2:scalePoint [ rdfs:label "Patch" ; rdf:value 0 ] ,
+                       [ rdfs:label "W1 sine" ; rdf:value 1 ] ,
+                       [ rdfs:label "W2" ; rdf:value 2 ] ,
+                       [ rdfs:label "W3" ; rdf:value 3 ] ,
+                       [ rdfs:label "W4" ; rdf:value 4 ] ,
+                       [ rdfs:label "W5" ; rdf:value 5 ] ,
+                       [ rdfs:label "W6" ; rdf:value 6 ] ,
+                       [ rdfs:label "W7" ; rdf:value 7 ] ,
+                       [ rdfs:label "W8" ; rdf:value 8 ]
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 13 ;
+        lv2:symbol "op5_wave" ;
+        lv2:name "OP5 wave" ;
+        rdfs:comment "The waveform operator 5 plays: 1 is the sine a DX7 has, 2 to 8 the other shapes the TX81Z and its relatives can pick. At 0 the operator keeps whatever the patch gave it, which for a converted TX81Z voice is a shape of its own. Moving it is heard on notes already held; selecting a program brings the patch's own shapes back." ;
+        lv2:portProperty lv2:integer ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 8 ;
+        lv2:scalePoint [ rdfs:label "Patch" ; rdf:value 0 ] ,
+                       [ rdfs:label "W1 sine" ; rdf:value 1 ] ,
+                       [ rdfs:label "W2" ; rdf:value 2 ] ,
+                       [ rdfs:label "W3" ; rdf:value 3 ] ,
+                       [ rdfs:label "W4" ; rdf:value 4 ] ,
+                       [ rdfs:label "W5" ; rdf:value 5 ] ,
+                       [ rdfs:label "W6" ; rdf:value 6 ] ,
+                       [ rdfs:label "W7" ; rdf:value 7 ] ,
+                       [ rdfs:label "W8" ; rdf:value 8 ]
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 14 ;
+        lv2:symbol "op6_wave" ;
+        lv2:name "OP6 wave" ;
+        rdfs:comment "The waveform operator 6 plays: 1 is the sine a DX7 has, 2 to 8 the other shapes the TX81Z and its relatives can pick. At 0 the operator keeps whatever the patch gave it, which for a converted TX81Z voice is a shape of its own. Moving it is heard on notes already held; selecting a program brings the patch's own shapes back." ;
+        lv2:portProperty lv2:integer ;
+        lv2:default 0 ;
+        lv2:minimum 0 ;
+        lv2:maximum 8 ;
+        lv2:scalePoint [ rdfs:label "Patch" ; rdf:value 0 ] ,
+                       [ rdfs:label "W1 sine" ; rdf:value 1 ] ,
+                       [ rdfs:label "W2" ; rdf:value 2 ] ,
+                       [ rdfs:label "W3" ; rdf:value 3 ] ,
+                       [ rdfs:label "W4" ; rdf:value 4 ] ,
+                       [ rdfs:label "W5" ; rdf:value 5 ] ,
+                       [ rdfs:label "W6" ; rdf:value 6 ] ,
+                       [ rdfs:label "W7" ; rdf:value 7 ] ,
+                       [ rdfs:label "W8" ; rdf:value 8 ]
     ] .
