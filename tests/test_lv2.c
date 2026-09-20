@@ -442,12 +442,20 @@ main(int argc, char **argv)
                     s2->atom.size = sizeof(LV2_Atom_Sequence_Body);
                 }
                 {
-                    /* oscillator phase carries across notes on a used voice (as on the
-                     * DX7 with key sync off), so compare levels, not samples */
-                    double ra = 0, rb = 0;
-                    for (i = 0; i < BLOCK * 8; i++) { ra += (double)a[i] * a[i]; rb += (double)b[i] * b[i]; }
-                    ra = sqrt(ra / (BLOCK * 8)); rb = sqrt(rb / (BLOCK * 8));
-                    CHECK(ra > 0.01 && fabs(ra - rb) < 0.02 * ra, "restored instance renders at the same level (%.4f vs %.4f)", ra, rb);
+                    /*
+                     * Sample for sample, not merely at the same level. A voice
+                     * keeps its oscillator phase between notes when key sync is
+                     * off, so this used to be an approximate comparison; now
+                     * that activating clears the phase, an instance restored
+                     * from a state has to render exactly what the original
+                     * does, and anything less is a state that did not restore.
+                     */
+                    double ra = 0;
+                    for (i = 0; i < BLOCK * 8; i++) ra += (double)a[i] * a[i];
+                    ra = sqrt(ra / (BLOCK * 8));
+                    CHECK(ra > 0.01, "the restored instance is audible (%.4f)", ra);
+                    CHECK(!memcmp(a, b, sizeof(float) * BLOCK * 8),
+                          "and renders exactly what the original does");
                 }
             }
             lilv_instance_deactivate(inst2);

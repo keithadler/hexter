@@ -159,9 +159,29 @@ hexter_engine_free(hexter_engine_t *instance)
 void
 hexter_engine_reset(hexter_engine_t *instance)
 {
+    int i, op;
+
     hexter_instance_all_voices_off(instance);
     instance->current_voices = 0;
     dx7_lfo_reset(instance);
+
+    /*
+     * A voice keeps its oscillator phase between notes when the patch has key
+     * sync off, which is what a DX7 does and is left alone while the synth is
+     * playing. But a host calls this when it (re)activates the plugin, and
+     * then it means "start over": without clearing the phase here, an engine
+     * that has already played renders slightly differently from a fresh one
+     * given the same work, which makes activation something you cannot
+     * reproduce.
+     */
+    for (i = 0; i < HEXTER_MAX_POLYPHONY; i++) {
+        dx7_voice_t *voice = instance->voice[i];
+
+        if (!voice) continue;
+        for (op = 0; op < MAX_DX7_OPERATORS; op++)
+            voice->op[op].phase = INT_TO_FP(0);
+        voice->feedback = INT_TO_FP(0);
+    }
 }
 
 float

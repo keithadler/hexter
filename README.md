@@ -295,7 +295,8 @@ install lilv`) enables the LV2 host test.
 Options: `-DHEXTER_BUILD_CLAP`, `-DHEXTER_BUILD_LV2`, `-DHEXTER_BUILD_DSSI`,
 `-DHEXTER_BUILD_TOOLS`, `-DHEXTER_BUILD_TESTS` (all on),
 `-DHEXTER_FLOATING_POINT` (off; the default is the fixed-point engine, which
-renders identically on every machine).
+renders identically on every machine). CI builds and tests both engines, so
+the floating-point one is not an option that only compiles in theory.
 
 ## Embedding the engine
 

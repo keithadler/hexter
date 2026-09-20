@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.7.1 (2026-09-19)
+
+### Fixed
+- **Activating the plugin did not fully reset the engine.** A voice keeps its oscillator
+  phase between notes when a patch has key sync off, which is what a DX7 does and is right
+  while the synth is playing. But a host also calls this when it activates the plugin, and
+  there it has to mean start over. It did not, so an engine that had already played
+  rendered slightly differently from a fresh one handed the same work, and a session
+  restored from a saved state did not sound quite like the one it was saved from.
+- **The floating-point engine is built and tested now.** `-DHEXTER_FLOATING_POINT=ON` is
+  offered in the README, and nothing ever built it, so it had been carrying a failing test
+  that no one could have seen. It was the bug above, showing up as a level difference just
+  wide enough to fail there and just narrow enough to pass in fixed point. CI builds and
+  tests both engines from here on.
+- The check that found it compares a restored instance against the original sample for
+  sample now, rather than accepting any two renders within two percent of each other.
+
+Existing patches are unaffected: DX7 output is still byte for byte what 2.5.1 renders.
+
 ## 2.7.0 (2026-09-19)
 
 ### Added

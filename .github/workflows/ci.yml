@@ -80,6 +80,16 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+      # The README offers a floating-point engine, so it has to work. Nothing
+      # built it until now, and it had a failing test nobody could have seen.
+      - name: Build and test the floating-point engine
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cmake -B build-fp -DCMAKE_BUILD_TYPE=Release -DHEXTER_FLOATING_POINT=ON \
+                -DRTAUDIO_API_JACK=OFF -DRTMIDI_API_JACK=OFF
+          cmake --build build-fp --config Release --parallel
+          ctest --test-dir build-fp --output-on-failure
+
       # The release ships two Linux standalones; build and check both here, or a
       # break in either only shows up at release time.
       - name: Build the JACK standalone too
