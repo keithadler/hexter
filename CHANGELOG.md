@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- The Linux standalone in 2.5.0 linked JACK, which means it refuses to start at all on a
+  machine with no JACK library installed. That was a regression against 2.4.1, which needed
+  only libraries every Linux has. The standalone in the package is built without JACK again
+  and runs anywhere; a second binary, `hexter-jack`, carries JACK for people who want it and
+  have it. Both workflows build and check both, so neither can quietly turn into the other.
+
 ## 2.5.0 (2026-09-19)
 
 ### Added

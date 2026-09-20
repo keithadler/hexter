@@ -42,10 +42,14 @@ output device and sample rate. Plug in a keyboard and play. It has no editor, so
 with MIDI program change, and load a bank by sending a DX7 bulk dump or by setting
 `HEXTER_DEFAULT_BANK` before starting it (see below).
 
-On **Linux** it speaks ALSA, PulseAudio and **JACK**; pick one in *Audio/MIDI Settings*.
-If you build it yourself, JACK is compiled in only when its development package is
-installed first (`libjack-jackd2-dev` on Debian and Ubuntu), so install that before
-configuring or the standalone will come out with ALSA alone.
+On **Linux** the package holds two of it. `hexter` speaks ALSA and PulseAudio and runs
+anywhere. `hexter-jack` speaks **JACK** as well, and needs a JACK library installed to
+start at all, which is why it is a separate file rather than the only one. Pick your
+backend in *Audio/MIDI Settings* either way.
+
+Building it yourself gives you the plain one; add `-DRTAUDIO_API_JACK=ON` and install
+JACK's development package first (`libjack-jackd2-dev` on Debian and Ubuntu) for the
+other.
 
 **On Windows the window is small on purpose.** hexter has no controls to show, so the window
 is a short note saying it is running. *Audio/MIDI Settings*, and saving or loading its state,
