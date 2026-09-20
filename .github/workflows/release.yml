@@ -147,13 +147,15 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      # The release APK is signed with a keystore kept as repository secrets; without them the
-      # workflow still builds, unsigned, which is enough for a dry run.
-      # The release APK is signed with the keystore kept in the repository secrets
-      # HEXTER_KEYSTORE_BASE64 / HEXTER_KEYSTORE_PASSWORD / HEXTER_KEY_ALIAS / HEXTER_KEY_PASSWORD.
-      # Without them a key is made for this run alone: the APK installs, but Android will not update
-      # an installed copy in place across releases signed with different keys, so a user has to
-      # uninstall first. Set the secrets and every release signs the same.
+      # Every release APK is signed with a key made for that run alone. That is deliberate:
+      # there is no release keystore and there is not going to be one. The APK installs
+      # fine; what it cannot do is update an installed copy in place, because Android
+      # refuses that across two different signing keys, so a user uninstalls first. The
+      # README tells them so.
+      #
+      # If that ever changes, put a keystore in the repository secrets
+      # HEXTER_KEYSTORE_BASE64 / HEXTER_KEYSTORE_PASSWORD / HEXTER_KEY_ALIAS /
+      # HEXTER_KEY_PASSWORD and every release will be signed the same instead.
       - name: Signing keystore
         env:
           KEYSTORE_B64: ${{ secrets.HEXTER_KEYSTORE_BASE64 }}
@@ -165,7 +167,7 @@ jobs:
           if [ -n "$KEYSTORE_B64" ]; then
             echo "$KEYSTORE_B64" | base64 -d > "$KS"
           else
-            echo "::warning::no HEXTER_KEYSTORE_BASE64 secret: signing this APK with a key made for this run only"
+            echo "::notice::signing this APK with a key made for this run, as intended; users uninstall before updating"
             KEYSTORE_PASSWORD=$(openssl rand -hex 16); KEY_ALIAS=hexter; KEY_PASSWORD=$KEYSTORE_PASSWORD
             keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias hexter -keyalg RSA -keysize 2048 -validity 3650 \
               -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" -dname "CN=hexter for Android (unattended build)" > /dev/null 2>&1

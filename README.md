@@ -102,10 +102,11 @@ asks you to confirm once. Here is the whole procedure, for someone who has never
    downloaded or received in a message. A bank sent from a keyboard as a bulk dump over MIDI
    loads too.
 
-**Updating.** Download the new `.apk` and install it the same way. If Android refuses with
-*"App not installed"* or a message about a different signature, uninstall hexter first (hold
-its icon, tap **Uninstall**), then install the new one. Your own bank files are not inside the
-app, so nothing is lost.
+**Updating.** Uninstall hexter first (hold its icon, tap **Uninstall**), then install the new
+`.apk` the same way. Android will refuse to install over the old copy with *"App not
+installed"* or a message about a different signature, and that is expected rather than a
+fault: each release is signed with its own key, since hexter has no release keystore. Your
+own bank files are not inside the app, so nothing is lost.
 
 **What it needs.** Android 8.0 or newer on a 64-bit device, which is every phone sold in the
 last several years. A USB keyboard needs no setup. For a Bluetooth MIDI keyboard, tap
