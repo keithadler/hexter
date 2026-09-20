@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.7.2 (2026-09-19)
+
+### Fixed
+- **An FB-01 bank saved as a MIDI file now loads.** Every other format hexter reads is
+  recognized inside a `.mid` as well as in a bare `.syx`, because that is how a dump often
+  gets saved. FB-01 support shipped yesterday looking only at whole files, so a bank wrapped
+  in a MIDI file was quietly ignored. It is recognized in the same scan as everything else
+  now, which also means it works in a file holding more than one dump.
+
 ## 2.7.1 (2026-09-19)
 
 ### Fixed

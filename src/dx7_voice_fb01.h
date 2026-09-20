@@ -41,8 +41,14 @@
 #define FB01_VOICE_PARAM_OFF     2   /* past a voice's own two-byte header */
 #define FB01_VOICE_PARAM_LEN   128   /* 64 parameters, two bytes each */
 
-/* true if this looks like an FB-01 bank dump of exactly FB01_BANK_SIZE bytes */
-int  fb01_bank_identify(const uint8_t *data, long length);
+/*
+ * True if an FB-01 bank dump starts at data[at].
+ *
+ * Inside a standard MIDI file the F0 is followed by the event's own length
+ * bytes, so everything after it sits `midshift` further along; pass 0 for a
+ * plain sysex file. This is the same shift the rest of the bank reader uses.
+ */
+int  fb01_bank_at(const uint8_t *data, long length, long at, int midshift);
 
 /*
  * Convert one FB-01 voice, given the 128 parameter bytes of it, into a 155-byte

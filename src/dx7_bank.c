@@ -93,36 +93,6 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
         return 0;
     }
 
-    /*
-     * An FB-01 bank is one whole message of its own and looks nothing like the
-     * DX7 family's, so it is recognized here rather than in the scan below.
-     * Forty-eight voices, converted the way the four-operator dumps are.
-     */
-    if (fb01_bank_identify(raw_patch_data, filelength)) {
-        int n = FB01_BANK_VOICES;
-
-        if (n > maxpatches) n = maxpatches;
-        if (n <= 0) {
-            if (errmsg) *errmsg = strdup("no room for the FB-01 voices");
-            return 0;
-        }
-        for (i = 0; i < n; i++) {
-            const uint8_t *v = raw_patch_data + FB01_VOICE_OFFSET
-                                              + i * FB01_VOICE_STRIDE
-                                              + FB01_VOICE_PARAM_OFF;
-            uint8_t unpacked[DX7_VOICE_SIZE_UNPACKED];
-            uint8_t buf[DX7_VOICE_SIZE_PACKED];   /* dx7_patch_pack must not overlap */
-
-            fb01_voice_to_dx7(v, unpacked);
-            dx7_patch_pack(unpacked, (dx7_patch_t *)buf, 0);
-            memcpy((uint8_t *)firstpatch + i * DX7_VOICE_SIZE_PACKED,
-                   buf, DX7_VOICE_SIZE_PACKED);
-        }
-        /* the FB-01 has only the one operator waveform, the sine */
-        if (op_waves) memset(op_waves, 0, (size_t)n * 6);
-        return n;
-    }
-
     /* check if the file is a standard MIDI file */
     if (raw_patch_data[0] == 0x4d &&    /* "M" */
         raw_patch_data[1] == 0x54 &&    /* "T" */
@@ -182,6 +152,27 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
             }
             count += DX_4OP_DUMP_VOICES;
             patchstart += (DX7_DUMP_SIZE_VOICE_BULK - 1);
+
+        } else if (fb01_bank_at(raw_patch_data, filelength, patchstart, midshift)) {
+            /* An FB-01 bank: its own message, 48 voices of its own layout.
+             * Converted here so that it works wherever any other dump does,
+             * including inside a MIDI file. */
+            for (i = 0; i < FB01_BANK_VOICES && count + i < maxpatches; i++) {
+                const uint8_t *v = raw_patch_data + patchstart + midshift
+                                 + FB01_VOICE_OFFSET + i * FB01_VOICE_STRIDE
+                                 + FB01_VOICE_PARAM_OFF;
+                uint8_t unpacked[DX7_VOICE_SIZE_UNPACKED];
+                uint8_t buf[DX7_VOICE_SIZE_PACKED];   /* dx7_patch_pack must not overlap */
+
+                fb01_voice_to_dx7(v, unpacked);
+                dx7_patch_pack(unpacked, (dx7_patch_t *)buf, 0);
+                memcpy(raw_patch_data + (count + i) * DX7_VOICE_SIZE_PACKED,
+                       buf, DX7_VOICE_SIZE_PACKED);
+                /* the FB-01 has only the one operator waveform, the sine */
+                if (op_waves) memset(op_waves[count + i], 0, 6);
+            }
+            count += i;
+            patchstart += FB01_BANK_SIZE + midshift - 1;
 
         } else if (raw_patch_data[patchstart] == 0xf0 &&
                    raw_patch_data[patchstart + midshift + 1] == 0x43 &&

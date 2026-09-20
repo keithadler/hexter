@@ -77,23 +77,28 @@ dx7_op_base(int op)          /* op is 1 to 6 */
 }
 
 int
-fb01_bank_identify(const uint8_t *data, long length)
+fb01_bank_at(const uint8_t *data, long length, long at, int midshift)
 {
+    /* byte k of the message, which is shifted along inside a MIDI file */
+    #define B(k) data[at + (k) + midshift]
     int i;
 
-    if (length != FB01_BANK_SIZE) return 0;
-    if (data[0] != 0xf0 || data[1] != 0x43 || data[2] != 0x75) return 0;
-    if (data[4] != 0x00 || data[5] != 0x00) return 0;
-    if (data[7] != 0x00 || data[8] != 0x40) return 0;   /* 64 bank bytes follow */
-    if (data[FB01_BANK_SIZE - 1] != 0xf7) return 0;
+    if (at < 0 || at + FB01_BANK_SIZE + midshift > length) return 0;
+    if (data[at] != 0xf0) return 0;                     /* the F0 itself is not shifted */
+    if (B(1) != 0x43 || B(2) != 0x75) return 0;         /* Yamaha, FB-01 */
+    if (B(3) > 0x0f) return 0;                          /* system channel */
+    if (B(4) != 0x00 || B(5) != 0x00) return 0;
+    if (B(7) != 0x00 || B(8) != 0x40) return 0;         /* 64 bank bytes follow */
+    if (B(FB01_BANK_SIZE - 1) != 0xf7) return 0;
 
     /* every voice announces its own 128 bytes, which is a strong check that
      * this is the message it claims to be and not something the same length */
     for (i = 0; i < FB01_BANK_VOICES; i++) {
-        const uint8_t *v = data + FB01_VOICE_OFFSET + i * FB01_VOICE_STRIDE;
-        if (v[0] != 0x01 || v[1] != 0x00) return 0;
+        long v = FB01_VOICE_OFFSET + (long)i * FB01_VOICE_STRIDE;
+        if (B(v) != 0x01 || B(v + 1) != 0x00) return 0;
     }
     return 1;
+    #undef B
 }
 
 void

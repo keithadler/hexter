@@ -686,7 +686,7 @@ test_fb01_bank(void)
     int n;
 
     build_fb01_bank(bank, 0);
-    CHECK(fb01_bank_identify(bank, FB01_BANK_SIZE), "the bank identifies as an FB-01 bank");
+    CHECK(fb01_bank_at(bank, FB01_BANK_SIZE, 0, 0), "the bank identifies as an FB-01 bank");
 
     n = hexter_engine_load_bank_memory(e, bank, FB01_BANK_SIZE, "fb01.syx", 0, &err);
     CHECK(n == 48, "an FB-01 bank loaded %d voices (%s)", n, err ? err : "no error");
@@ -797,17 +797,57 @@ test_fb01_bank(void)
               "the attenuated bank is quieter (%.4f against %.4f)", quiet, peak);
     }
 
+    /*
+     * The same bank inside a standard MIDI file, which is how people often
+     * save a dump. Every DX7-family format has always worked that way; this
+     * one only worked as a bare .syx until now.
+     */
+    {
+        static uint8_t mid[64 + FB01_BANK_SIZE + 8];
+        hexter_engine_t *m = hexter_engine_new(44100.0f);
+        char mname[11], *merr = NULL;
+        size_t at, len = 0;
+        int body = FB01_BANK_SIZE - 1;         /* everything after the F0 */
+
+        memcpy(mid, "MThd", 4); len = 4;
+        mid[len++] = 0; mid[len++] = 0; mid[len++] = 0; mid[len++] = 6;
+        mid[len++] = 0; mid[len++] = 0;        /* format 0 */
+        mid[len++] = 0; mid[len++] = 1;        /* one track */
+        mid[len++] = 0; mid[len++] = 96;       /* division */
+        memcpy(mid + len, "MTrk", 4); len += 4;
+        mid[len++] = 0; mid[len++] = 0; mid[len++] = 0; mid[len++] = 0;  /* track length */
+        mid[len++] = 0;                        /* delta time */
+
+        at = len;
+        mid[len++] = 0xf0;
+        /* the event's own length, as MIDI files write it: seven bits a byte */
+        mid[len++] = (uint8_t)(0x80 | ((body >> 7) & 0x7f));
+        mid[len++] = (uint8_t)(body & 0x7f);
+        memcpy(mid + len, bank + 1, (size_t)body); len += (size_t)body;
+
+        CHECK(fb01_bank_at(mid, (long)len, (long)at, 2),
+              "the bank is found inside a MIDI file");
+        CHECK(!fb01_bank_at(mid, (long)len, (long)at, 0),
+              "and not without allowing for the event's length bytes");
+        CHECK(hexter_engine_load_bank_memory(m, mid, len, "fb01.mid", 0, &merr) == 48,
+              "an FB-01 bank in a MIDI file loaded (%s)", merr ? merr : "no error");
+        free(merr);
+        hexter_engine_get_program_name(m, 0, mname);
+        CHECK(!strcmp(mname, "FB01 V1   "), "with its voices intact, program 1 is '%s'", mname);
+        hexter_engine_free(m);
+    }
+
     /* things that are not an FB-01 bank are not taken for one */
     {
         static uint8_t other[FB01_BANK_SIZE];
 
         memcpy(other, bank, FB01_BANK_SIZE);
         other[2] = 0x09;                       /* not the FB-01's id */
-        CHECK(!fb01_bank_identify(other, FB01_BANK_SIZE), "a different model is refused");
+        CHECK(!fb01_bank_at(other, FB01_BANK_SIZE, 0, 0), "a different model is refused");
         memcpy(other, bank, FB01_BANK_SIZE);
         other[FB01_VOICE_OFFSET] = 0x02;       /* a voice that claims another length */
-        CHECK(!fb01_bank_identify(other, FB01_BANK_SIZE), "a wrong voice header is refused");
-        CHECK(!fb01_bank_identify(bank, FB01_BANK_SIZE - 1), "the wrong length is refused");
+        CHECK(!fb01_bank_at(other, FB01_BANK_SIZE, 0, 0), "a wrong voice header is refused");
+        CHECK(!fb01_bank_at(bank, FB01_BANK_SIZE - 1, 0, 0), "the wrong length is refused");
     }
 
     hexter_engine_free(e);
