@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Checked
+- **The FB-01 conversion was checked against two more sources and holds.** It was written
+  from one editor's reading of the format; it has now been compared against Yamaha's own
+  Voice Data Format and Operator Block tables in the FB-01 owner's manual, and against the
+  Edisyn editor. Every field agrees: the 48-voice bank, the nibble pairs, the reversed
+  operator storage, the enable bits, and both of the values stored as attenuation.
+- One field is worth naming, because the three readings did not all agree. The operator
+  detune is Yamaha's **DT1**, which this chip family stores as sign and magnitude: 0 and 4
+  mean no detune, 1-3 go one way, 5-7 the other. hexter reads it that way and the manual
+  confirms it. An editor that shows it as a plain 0-7 dial is reading it as a linear offset.
+
 ## 2.7.2 (2026-09-19)
 
 ### Fixed

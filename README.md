@@ -242,11 +242,15 @@ inside a MIDI file, as with every other format it understands. Two of its values
 are stored as **attenuation**, where zero is loudest, so they are turned round
 on the way in; read the other way a patch would come out inside out and silent.
 
-The FB-01's format was read from the
+The FB-01's format was first read from the
 [FB01 Sound Editor](https://sourceforge.net/projects/fb01editor/) by Frederic
-Meslin. That program is GPLv3 and hexter is GPL-2.0-or-later, so none of its
-code is here: what was taken is the description of a file format, which is a
-fact about the hardware. It is credited in AUTHORS.
+Meslin, then checked against **Yamaha's own Voice Data Format tables** in the
+FB-01 owner's manual and against [Edisyn](https://github.com/eclab/edisyn) as a
+second opinion. All three agree with what hexter does, field for field. Those
+two programs are GPLv3 and Apache-2.0 respectively and hexter is
+GPL-2.0-or-later, so no code from either is here: what was taken is the
+description of a file format, which is a fact about the hardware and one Yamaha
+published itself. Both are credited in AUTHORS.
 
 Like the TX81Z work, this is built from the format rather than from a real dump.
 The FB-01 banks that ship in `banks/` are conversions somebody made long ago,

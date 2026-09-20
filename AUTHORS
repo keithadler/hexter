@@ -83,9 +83,15 @@ by a large number of DX7 and synthesis enthusiasts, including:
     - Frederic Meslin, whose FB01 Sound Editor
         (https://sourceforge.net/projects/fb01editor/) documents the FB-01's
         bank and voice layout, including the two values it stores as
-        attenuation. hexter's FB-01 support was written from that description.
-        That program is GPLv3 and none of its code is here. Found for us by
-        Reaper10.
+        attenuation. hexter's FB-01 support was written from that description
+        and then checked against Yamaha's own Voice Data Format tables in the
+        FB-01 owner's manual, which agree with it. That program is GPLv3 and
+        none of its code is here. Found for us by Reaper10.
+
+    - Sean Reilly and the Edisyn project (https://github.com/eclab/edisyn,
+        Apache-2.0), whose FB-01 editor was read as a second opinion on that
+        format. It agrees field for field, and none of its code is here
+        either. Also found for us by Reaper10.
 
     - Aaron Giles, whose ymfm (https://github.com/aaronsgiles/ymfm,
         BSD-3-Clause, Copyright (c) 2021 Aaron Giles) works out the eight

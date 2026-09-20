@@ -36,23 +36,27 @@ enum {
     V_OPERATORS = 16        /* four operators of eight parameters each */
 };
 
-/* and the eight parameters of one operator */
+/*
+ * The eight parameters of one operator, named as the manual's Operator Block
+ * table names them. TL and SL are attenuation, the way this chip counts: zero
+ * is loudest.
+ */
 enum {
-    OP_LEVEL = 0,           /* attenuation: 0 is loudest, 127 silent */
-    OP_CURB_VELOCITY,       /* bit 7 curve low bit, bits 4-6 level velocity */
-    OP_DEPTH_ADJUST,        /* bits 4-7 level scaling depth, bits 0-3 adjust */
-    OP_CURB_FINE_MULTIPLE,  /* bit 7 curve high bit, bits 4-6 detune, bits 0-3 ratio */
-    OP_RATE_ATTACK,         /* bits 6-7 rate scaling, bits 0-4 attack */
-    OP_MOD_DECAY1,          /* bit 7 modulator, bits 5-6 attack velocity, bits 0-4 decay */
-    OP_COARSE_DECAY2,       /* bits 6-7 coarse detune, bits 0-4 second decay */
-    OP_SUSTAIN_RELEASE,     /* bits 4-7 sustain, attenuating, bits 0-3 release */
+    OP_LEVEL = 0,           /* TL, attenuation: 0 is loudest, 127 silent */
+    OP_CURB_VELOCITY,       /* bit 7 scaling type bit 0, bits 4-6 velocity for TL */
+    OP_DEPTH_ADJUST,        /* bits 4-7 level scaling depth, bits 0-3 adjust for TL */
+    OP_CURB_FINE_MULTIPLE,  /* bit 7 scaling type bit 1, bits 4-6 DT1, bits 0-3 multiple */
+    OP_RATE_ATTACK,         /* bits 6-7 rate scaling depth, bits 0-4 AR */
+    OP_MOD_DECAY1,          /* bit 7 carrier, bits 5-6 velocity for AR, bits 0-4 D1R */
+    OP_COARSE_DECAY2,       /* bits 6-7 DT2, bits 0-4 D2R */
+    OP_SUSTAIN_RELEASE,     /* bits 4-7 SL, attenuating, bits 0-3 RR */
     OP_PARAMS = 8
 };
 
 /*
- * The FB-01's coarse detune multiplies the ratio by roughly 1, 1.41, 1.57 and
- * 1.73. The DX7 reaches those with its frequency fine value, which scales the
- * coarse ratio by one hundredth per step.
+ * DT2 multiplies the ratio by roughly 1, 1.41, 1.57 and 1.73. The DX7 reaches
+ * those with its frequency fine value, which scales the coarse ratio by one
+ * hundredth per step.
  */
 static const uint8_t coarse_detune_fine[4] = { 0, 41, 57, 73 };
 
@@ -169,8 +173,12 @@ fb01_voice_to_dx7(const uint8_t *params128, uint8_t *unpacked155)
         o[18] = clamp(multiple, 0, 31);
         o[19] = coarse_detune_fine[coarse];
 
-        /* detune is 0 and 4 for none, 1-3 one way and 5-7 the other; the DX7
-         * centers the same idea on 7 */
+        /*
+         * DT1, which this chip family stores as sign and magnitude: 0 and 4
+         * are no detune, 1-3 go one way and 5-7 the other. The DX7 centers the
+         * same idea on 7. Editors that read it as a plain 0-7 dial get this
+         * wrong, so it is worth spelling out.
+         */
         detune = (fine < 4) ? fine : -(fine - 4);
         o[20] = clamp(7 + detune, 0, 14);
     }

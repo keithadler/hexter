@@ -4,11 +4,12 @@
  *
  * Copyright (C) 2026 Keith Adler
  *
- * The FB-01's bank and voice layout was read from the FB01 Sound Editor by
- * Frederic Meslin (https://sourceforge.net/projects/fb01editor/). That program
- * is GPLv3 and none of it is copied here: what was taken is the description of
- * a file format, which is a fact about the hardware rather than anyone's code.
- * See AUTHORS.
+ * The layout here is Yamaha's own, from the "Voice Data Format $00 - $3F" and
+ * "Operator Block" tables in the FB-01 owner's manual. It was first worked out
+ * from the FB01 Sound Editor by Frederic Meslin
+ * (https://sourceforge.net/projects/fb01editor/) and cross-checked against
+ * Edisyn (https://github.com/eclab/edisyn); both agree with the manual and
+ * with this, field for field, and neither is copied here. See AUTHORS.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
