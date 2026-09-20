@@ -65,7 +65,7 @@ jobs:
       # installed, so the standalone everybody gets is built without it and a
       # second one that has it is shipped alongside.
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DHEXTER_BUILD_DSSI=OFF -DRTAUDIO_API_JACK=OFF ${{ matrix.family == 'windows' && '-G Ninja' || '' }} ${{ matrix.family == 'macos' && '-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"' || '' }}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DHEXTER_BUILD_DSSI=OFF -DRTAUDIO_API_JACK=OFF -DRTMIDI_API_JACK=OFF ${{ matrix.family == 'windows' && '-G Ninja' || '' }} ${{ matrix.family == 'macos' && '-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"' || '' }}
 
       - name: Build
         run: cmake --build build --config Release --parallel
@@ -77,7 +77,7 @@ jobs:
         if: matrix.family == 'linux'
         run: |
           cmake -B build-jack -DCMAKE_BUILD_TYPE=Release -DHEXTER_BUILD_DSSI=OFF \
-                -DHEXTER_BUILD_AUV2=OFF -DRTAUDIO_API_JACK=ON
+                -DHEXTER_BUILD_AUV2=OFF -DRTAUDIO_API_JACK=ON -DRTMIDI_API_JACK=ON
           cmake --build build-jack --config Release --parallel --target hexter_wrapped_standalone
 
       - name: Check each Linux standalone carries what it should

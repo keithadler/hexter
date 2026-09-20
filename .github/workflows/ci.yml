@@ -65,7 +65,7 @@ jobs:
       # Matches what the release ships: the standalone everybody gets does not link
       # JACK, because that would stop it starting on a machine without one.
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DRTAUDIO_API_JACK=OFF ${{ matrix.os == 'windows-latest' && '-G Ninja' || '' }} ${{ matrix.os == 'macos-latest' && '-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"' || '' }}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DRTAUDIO_API_JACK=OFF -DRTMIDI_API_JACK=OFF ${{ matrix.os == 'windows-latest' && '-G Ninja' || '' }} ${{ matrix.os == 'macos-latest' && '-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"' || '' }}
 
       - name: Build
         run: cmake --build build --config Release --parallel
@@ -79,7 +79,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           cmake -B build-jack -DCMAKE_BUILD_TYPE=Release -DHEXTER_BUILD_DSSI=OFF \
-                -DHEXTER_BUILD_AUV2=OFF -DRTAUDIO_API_JACK=ON
+                -DHEXTER_BUILD_AUV2=OFF -DRTAUDIO_API_JACK=ON -DRTMIDI_API_JACK=ON
           cmake --build build-jack --config Release --parallel --target hexter_wrapped_standalone
 
       - name: Check each Linux standalone carries what it should
