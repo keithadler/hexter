@@ -62,6 +62,13 @@ jobs:
             git
             unzip
 
+      # The engine's sources are listed in three builds. Adding one to the desktop
+      # build and forgetting Android or iOS passes here and fails there, so check
+      # it up front where the message is obvious.
+      - name: The three source lists agree
+        if: matrix.os == 'ubuntu-latest'
+        run: ./tools/check-source-lists.sh
+
       # Matches what the release ships: the standalone everybody gets does not link
       # JACK, because that would stop it starting on a machine without one.
       - name: Configure

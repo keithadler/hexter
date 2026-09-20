@@ -15,6 +15,7 @@ add_library(hexter_engine STATIC
     ${HEXTER_ROOT}/src/hexter_synth.c
     ${HEXTER_ROOT}/src/dx7_bank.c
     ${HEXTER_ROOT}/src/dx7_voice_4op.c
+    ${HEXTER_ROOT}/src/dx7_voice_fb01.c
     ${HEXTER_ROOT}/src/hexter_engine.c)
 target_include_directories(hexter_engine PUBLIC ${HEXTER_ROOT}/src)
 file(READ ${HEXTER_ROOT}/CMakeLists.txt HEXTER_TOP)
