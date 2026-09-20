@@ -12,6 +12,7 @@
 
 #include "hexter_engine.h"
 #include "dx7_voice.h"
+#include "dx7_voice_fb01.h"
 #include "dx7_bank.h"
 #include "dx7_voice_data.h"
 
@@ -595,6 +596,223 @@ test_4op_bank(void)
     hexter_engine_free(e);
 }
 
+/* ---- FB-01 banks ---- */
+
+/* write one FB-01 parameter: two bytes, low nibble first */
+static void
+fb01_put(uint8_t *params, int index, int value)
+{
+    params[index * 2]     = (uint8_t)(value & 0x0f);
+    params[index * 2 + 1] = (uint8_t)((value >> 4) & 0x0f);
+}
+
+/* one operator's eight parameters, at their reversed position */
+static uint8_t *
+fb01_op(uint8_t *params, int op)          /* op is 1 to 4 */
+{
+    return params + (16 + (4 - op) * 8) * 2;
+}
+
+static uint8_t
+fb01_sum(const uint8_t *p, int n)
+{
+    int i, sum = 0;
+    for (i = 0; i < n; i++) sum += p[i];
+    return (uint8_t)((-sum) & 0x7f);
+}
+
+/*
+ * Build an FB-01 bank with known values in it. Voice 0 has every operator
+ * switched on; voice 1 has OP4 switched off, so the enable bits can be seen
+ * to do something.
+ */
+static void
+build_fb01_bank(uint8_t *out, int loud)
+{
+    static const char *names[2] = { "FB01 V1", "FB01 V2" };
+    /* attenuation, so 0 is the loudest and 127 is silence */
+    static const int level[4]   = { 0, 32, 64, 96 };
+    static const int sustain[4] = { 0, 15, 5, 0 };
+    static const int fine[4]    = { 2, 6, 0, 0 };
+    static const int coarse[4]  = { 0, 0, 1, 0 };
+    int v, i;
+
+    memset(out, 0, FB01_BANK_SIZE);
+    out[0] = 0xf0; out[1] = 0x43; out[2] = 0x75;
+    out[3] = 0x00; out[4] = 0x00; out[5] = 0x00; out[6] = 0x00;
+    out[7] = 0x00; out[8] = 0x40;              /* 64 bank bytes follow */
+    out[73] = fb01_sum(out + 9, 64);
+
+    for (v = 0; v < FB01_BANK_VOICES; v++) {
+        uint8_t *voice = out + FB01_VOICE_OFFSET + v * FB01_VOICE_STRIDE;
+        uint8_t *p = voice + FB01_VOICE_PARAM_OFF;
+
+        voice[0] = 0x01; voice[1] = 0x00;      /* 128 parameter bytes follow */
+
+        for (i = 0; i < 7; i++) fb01_put(p, i, names[v & 1][i]);
+        fb01_put(p, 8,  127);                  /* LFO speed, its maximum */
+        fb01_put(p, 9,  127);                  /* amplitude mod depth, load bit clear */
+        fb01_put(p, 10, 64);                   /* pitch mod depth, sync bit clear */
+        /* enable bits 6,5,4,3 are OP1 to OP4 */
+        fb01_put(p, 11, (v & 1) ? 0x70 : 0x78);
+        fb01_put(p, 12, 1 | (5 << 3));         /* algorithm 2 (index 1), feedback 5 */
+        fb01_put(p, 13, 2 | (6 << 4));         /* amplitude mod 2, pitch mod 6 */
+        fb01_put(p, 14, 2 << 5);               /* LFO wave: triangle */
+        fb01_put(p, 15, 0xfc);                 /* transpose, four semitones down */
+
+        for (i = 1; i <= 4; i++) {
+            uint8_t *o = fb01_op(p, i);
+            fb01_put(o, 0, loud ? 0 : level[i - 1]);       /* 0 is the loudest */
+            fb01_put(o, 1, (7 << 4) | (i == 1 ? 0x80 : 0));   /* level velocity, curve bit */
+            fb01_put(o, 2, (i == 1 ? 15 : 0) << 4);           /* level scaling depth */
+            fb01_put(o, 3, (fine[i - 1] << 4) | 1 | (i == 1 ? 0x80 : 0)); /* ratio 1 */
+            fb01_put(o, 4, (3 << 6) | 31);                    /* rate scaling, attack */
+            fb01_put(o, 5, 31);                               /* first decay */
+            fb01_put(o, 6, (coarse[i - 1] << 6) | 0);         /* coarse detune, second decay */
+            fb01_put(o, 7, ((loud ? 0 : sustain[i - 1]) << 4) | 15);   /* sustain, release */
+        }
+        voice[130] = fb01_sum(p, 128);
+    }
+    out[FB01_BANK_SIZE - 1] = 0xf7;
+}
+
+static void
+test_fb01_bank(void)
+{
+    static uint8_t bank[FB01_BANK_SIZE];
+    hexter_engine_t *e = hexter_engine_new(44100.0f);
+    uint8_t cur[155];
+    char name[11], *err = NULL;
+    int n;
+
+    build_fb01_bank(bank, 0);
+    CHECK(fb01_bank_identify(bank, FB01_BANK_SIZE), "the bank identifies as an FB-01 bank");
+
+    n = hexter_engine_load_bank_memory(e, bank, FB01_BANK_SIZE, "fb01.syx", 0, &err);
+    CHECK(n == 48, "an FB-01 bank loaded %d voices (%s)", n, err ? err : "no error");
+    free(err); err = NULL;
+
+    hexter_engine_get_program_name(e, 0, name);
+    CHECK(!strcmp(name, "FB01 V1   "), "its seven-character name became '%s'", name);
+
+    hexter_engine_select_program(e, 0);
+    hexter_engine_get_current_patch(e, cur);
+
+    /* algorithm 2 stands in as DX7 algorithm 14, which is stored as 13, and
+     * sends the four operators to DX7 4, 5, 3 and 6 */
+    CHECK(cur[134] == 13, "algorithm 2 became DX7 algorithm %d", cur[134] + 1);
+    CHECK(cur[135] == 5, "feedback carried across as %d", cur[135]);
+
+    /*
+     * The FB-01 stores an operator's level as attenuation: 0 is loudest and
+     * 127 is silence, the opposite of the DX7. These four were written as 0,
+     * 32, 64 and 96, so they must come out loud to quiet, in that order, on
+     * the DX7 operators the algorithm sends them to. Reading it the wrong way
+     * round would turn every patch inside out and still load cleanly.
+     */
+    CHECK(cur[(6 - 4) * 21 + 16] == 99, "OP1, silent-coded 0, became level %d on DX7 OP4",
+          cur[(6 - 4) * 21 + 16]);
+    CHECK(cur[(6 - 5) * 21 + 16] == 74, "OP2, coded 32, became %d on DX7 OP5",
+          cur[(6 - 5) * 21 + 16]);
+    CHECK(cur[(6 - 3) * 21 + 16] == 49, "OP3, coded 64, became %d on DX7 OP3",
+          cur[(6 - 3) * 21 + 16]);
+    CHECK(cur[(6 - 6) * 21 + 16] == 24, "OP4, coded 96, became %d on DX7 OP6",
+          cur[(6 - 6) * 21 + 16]);
+    /* the two operators with nowhere to come from stay silent */
+    CHECK(cur[(6 - 1) * 21 + 16] == 0 && cur[(6 - 2) * 21 + 16] == 0,
+          "the spare operators are silent");
+
+    /* sustain is attenuation too: stored 0 is the loudest, stored 15 silent */
+    CHECK(cur[(6 - 4) * 21 + 5] == 99, "OP1's sustain, coded 0, became %d",
+          cur[(6 - 4) * 21 + 5]);
+    CHECK(cur[(6 - 5) * 21 + 5] == 0, "OP2's sustain, coded 15, became %d",
+          cur[(6 - 5) * 21 + 5]);
+    CHECK(cur[(6 - 3) * 21 + 5] == 66, "OP3's sustain, coded 5, became %d",
+          cur[(6 - 3) * 21 + 5]);
+
+    /* detune runs 0-3 one way and 5-7 the other, around the DX7's 7 */
+    CHECK(cur[(6 - 4) * 21 + 20] == 9, "detune 2 became %d", cur[(6 - 4) * 21 + 20]);
+    CHECK(cur[(6 - 5) * 21 + 20] == 5, "detune 6 became %d", cur[(6 - 5) * 21 + 20]);
+
+    /* the coarse detune becomes a frequency fine value */
+    CHECK(cur[(6 - 4) * 21 + 18] == 1 && cur[(6 - 4) * 21 + 19] == 0,
+          "ratio 1 with no coarse detune became coarse %d fine %d",
+          cur[(6 - 4) * 21 + 18], cur[(6 - 4) * 21 + 19]);
+    CHECK(cur[(6 - 3) * 21 + 19] == 41, "coarse detune 1 became fine %d",
+          cur[(6 - 3) * 21 + 19]);
+
+    /* envelope and scaling */
+    CHECK(cur[(6 - 4) * 21 + 0] == 99, "maximum attack became %d", cur[(6 - 4) * 21 + 0]);
+    CHECK(cur[(6 - 4) * 21 + 13] == 7, "maximum rate scaling became %d", cur[(6 - 4) * 21 + 13]);
+    CHECK(cur[(6 - 4) * 21 + 9] == 99 && cur[(6 - 4) * 21 + 11] == 3,
+          "level scaling depth %d and curve %d", cur[(6 - 4) * 21 + 9], cur[(6 - 4) * 21 + 11]);
+    CHECK(cur[(6 - 4) * 21 + 15] == 7, "velocity sensitivity became %d", cur[(6 - 4) * 21 + 15]);
+    CHECK(cur[(6 - 4) * 21 + 14] == 2, "amplitude mod sensitivity became %d", cur[(6 - 4) * 21 + 14]);
+
+    /* voice-level */
+    CHECK(cur[137] == 99, "LFO speed carried across as %d", cur[137]);
+    CHECK(cur[142] == 0, "triangle LFO became wave %d", cur[142]);
+    CHECK(cur[141] == 1, "the sync bit reads the other way round (%d)", cur[141]);
+    CHECK(cur[143] == 3, "pitch mod sensitivity 6 halved to %d", cur[143]);
+    CHECK(cur[144] == 20, "four semitones down became transpose %d", cur[144]);
+
+    /* the enable bits switch an operator off */
+    hexter_engine_select_program(e, 1);
+    hexter_engine_get_current_patch(e, cur);
+    CHECK(cur[(6 - 6) * 21 + 16] == 0, "OP4 switched off is silent (level %d)",
+          cur[(6 - 6) * 21 + 16]);
+    CHECK(cur[(6 - 4) * 21 + 16] == 99, "while OP1 still sounds (level %d)",
+          cur[(6 - 4) * 21 + 16]);
+
+    /* And it makes a sound. The bank above is deliberately quiet, since its
+     * levels are spread out to prove the attenuation is read the right way
+     * round, so this uses one with every operator wide open. */
+    {
+        static uint8_t loud[FB01_BANK_SIZE];
+        static float out[4410];
+        hexter_engine_t *l = hexter_engine_new(44100.0f);
+        hexter_event_t note;
+        char *lerr = NULL;
+        double peak = 0.0, quiet = 0.0;
+        int i;
+
+        build_fb01_bank(loud, 1);
+        CHECK(hexter_engine_load_bank_memory(l, loud, FB01_BANK_SIZE, "fb01.syx", 0, &lerr) == 48,
+              "the open bank loaded (%s)", lerr ? lerr : "no error");
+        free(lerr);
+        hexter_engine_select_program(l, 0);
+        memset(&note, 0, sizeof(note));
+        note.type = HEXTER_EV_NOTE_ON; note.a = 60; note.b = 100;
+        render_seconds(l, out, 4410, &note, 1);
+        for (i = 0; i < 4410; i++) if (fabs(out[i]) > peak) peak = fabs(out[i]);
+        CHECK(peak > 0.01, "a converted FB-01 voice makes a sound (peak %.4f)", peak);
+        hexter_engine_free(l);
+
+        /* and the spread-out one is quieter, which is the attenuation showing
+         * up in the sound rather than only in the bytes */
+        hexter_engine_select_program(e, 0);
+        render_seconds(e, out, 4410, &note, 1);
+        for (i = 0; i < 4410; i++) if (fabs(out[i]) > quiet) quiet = fabs(out[i]);
+        CHECK(quiet > 0.0 && quiet < peak / 4.0,
+              "the attenuated bank is quieter (%.4f against %.4f)", quiet, peak);
+    }
+
+    /* things that are not an FB-01 bank are not taken for one */
+    {
+        static uint8_t other[FB01_BANK_SIZE];
+
+        memcpy(other, bank, FB01_BANK_SIZE);
+        other[2] = 0x09;                       /* not the FB-01's id */
+        CHECK(!fb01_bank_identify(other, FB01_BANK_SIZE), "a different model is refused");
+        memcpy(other, bank, FB01_BANK_SIZE);
+        other[FB01_VOICE_OFFSET] = 0x02;       /* a voice that claims another length */
+        CHECK(!fb01_bank_identify(other, FB01_BANK_SIZE), "a wrong voice header is refused");
+        CHECK(!fb01_bank_identify(bank, FB01_BANK_SIZE - 1), "the wrong length is refused");
+    }
+
+    hexter_engine_free(e);
+}
+
 /* ---- operator waveforms ---- */
 
 /*
@@ -1043,6 +1261,7 @@ main(int argc, char **argv)
     test_algorithm();
     test_4op_bank();
     test_op_waveforms();
+    test_fb01_bank();
     test_state();
     test_voices();
     test_sample_rates();

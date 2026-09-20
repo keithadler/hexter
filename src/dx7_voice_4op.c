@@ -42,15 +42,8 @@ enum {                  /* the voice's own bytes */
     V_PEG_LEVEL = 70
 };
 
-/*
- * Each of the eight four-operator algorithms, as the nearest six-operator one,
- * with the DX7 operator that each four-operator operator becomes. Operators
- * are numbered as people number them, 1 to 6.
- */
-static const struct {
-    uint8_t dx7_algorithm;          /* 1 to 32, as printed on the instrument */
-    uint8_t dx7_op[4];              /* for four-operator OP1, OP2, OP3, OP4 */
-} algorithm_map[8] = {
+/* Described in the header, and shared with the FB-01 converter. */
+const dx_4op_algorithm_t dx_4op_algorithm_map[8] = {
     {  1, { 3, 4, 5, 6 } },
     { 14, { 4, 5, 3, 6 } },
     {  8, { 3, 5, 6, 4 } },
@@ -78,7 +71,7 @@ static const struct { uint8_t coarse, fine; } freq_map[64] = {
 };
 
 /* saw, square, triangle, sample and hold, in the DX7's own numbering */
-static const uint8_t lfo_wave_map[4] = { 2, 3, 0, 5 };
+const uint8_t dx_4op_lfo_wave_map[4] = { 2, 3, 0, 5 };
 
 static int
 clamp(int v, int lo, int hi)
@@ -122,7 +115,7 @@ dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155,
 
     for (i = 0; i < 4; i++) {          /* four-operator OP1 through OP4 */
         const uint8_t *s = packed128 + op_offset[i];
-        uint8_t *o = unpacked155 + dx7_op_base(algorithm_map[alg].dx7_op[i]);
+        uint8_t *o = unpacked155 + dx7_op_base(dx_4op_algorithm_map[alg].dx7_op[i]);
         int freq = s[OP_FREQ] & 0x3f;
 
         /* envelope: four rates and four levels. The four-operator envelope has
@@ -149,7 +142,7 @@ dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155,
         o[20] = clamp((s[OP_KSR_DETUNE] & 0x07) + 4, 0, 14);
 
         if (op_wave6) {
-            int dx7_op = algorithm_map[alg].dx7_op[i];        /* 1 to 6 */
+            int dx7_op = dx_4op_algorithm_map[alg].dx7_op[i];        /* 1 to 6 */
             op_wave6[dx7_op - 1] = (packed128[wave_byte[i]] >> 4) & 0x07;
         }
     }
@@ -164,7 +157,7 @@ dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155,
     unpacked155[132] = clamp(packed128[V_PEG_LEVEL + 1], 0, 99);
     unpacked155[133] = clamp(packed128[V_PEG_LEVEL + 2], 0, 99);
 
-    unpacked155[134] = clamp(algorithm_map[alg].dx7_algorithm - 1, 0, 31);
+    unpacked155[134] = clamp(dx_4op_algorithm_map[alg].dx7_algorithm - 1, 0, 31);
     unpacked155[135] = clamp((packed128[V_ALG_FB_SYNC] >> 3) & 0x07, 0, 7);  /* feedback */
     unpacked155[136] = 1;                                                    /* key sync on */
 
@@ -173,7 +166,7 @@ dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155,
     unpacked155[139] = clamp(packed128[V_PMD], 0, 99);
     unpacked155[140] = clamp(packed128[V_AMD], 0, 99);
     unpacked155[141] = (packed128[V_ALG_FB_SYNC] >> 6) & 0x01;               /* LFO sync */
-    unpacked155[142] = lfo_wave_map[packed128[V_LFO_WAVE_SENS] & 0x03];
+    unpacked155[142] = dx_4op_lfo_wave_map[packed128[V_LFO_WAVE_SENS] & 0x03];
     /* pitch modulation reaches further on the DX7 for the same number, so
      * halve it rather than let converted voices wobble twice as hard */
     unpacked155[143] = clamp(((packed128[V_LFO_WAVE_SENS] >> 4) & 0x07) / 2, 0, 7);

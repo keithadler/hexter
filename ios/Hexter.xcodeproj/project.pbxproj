@@ -25,6 +25,7 @@
 		CA455C22A8B664B01018E6D9 /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE675FA51D4E1E383653EE4C /* Engine.swift */; };
 		CE4A14134525B4CE55B32897 /* default_patches.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = 30187A0D97C6225077E84E89 /* default_patches.dx7 */; };
 		D05F14CA1759FE9BBF519792 /* fb01_roms_converted_12.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = AD05C2606F1B708D29E0AE26 /* fb01_roms_converted_12.dx7 */; };
+		D4BBEAB64A1646FCD7529BD7 /* dx7_voice_fb01.c in Sources */ = {isa = PBXBuildFile; fileRef = D6A3A75A807089F7B5AFF7B6 /* dx7_voice_fb01.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
 		D5CACCB9AC408D5B8614BDAB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938839CE26E2490B9C6BD2E2 /* ContentView.swift */; };
 		E598180FE637C90F0BC1674D /* dx7_voice_patches.c in Sources */ = {isa = PBXBuildFile; fileRef = 991EEEA5F9F39E1B822D9EC3 /* dx7_voice_patches.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
 		F0D652D27C7DF487477E7344 /* hexter_engine.c in Sources */ = {isa = PBXBuildFile; fileRef = 8E1D6ECD6DFE70F3297BA0CE /* hexter_engine.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
@@ -35,6 +36,7 @@
 		0067340DE83F8E93F89192F5 /* hexter_mutex.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_mutex.h; sourceTree = "<group>"; };
 		0EA6CD95DAFE0964B5C9B502 /* dx7_voice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_voice.h; sourceTree = "<group>"; };
 		153C925540EA071FE51C9FFB /* dx7_bank.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_bank.c; sourceTree = "<group>"; };
+		16B8666126CD866294F95D5A /* dx7_voice_fb01.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_voice_fb01.h; sourceTree = "<group>"; };
 		197509265D223ED370CF1B4F /* dx7_voice_data.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_data.c; sourceTree = "<group>"; };
 		19E5B5EDB85428D18D90B9D9 /* hexter_engine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_engine.h; sourceTree = "<group>"; };
 		20E78208485B633DBD4CF73E /* gui_interface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_interface.h; sourceTree = "<group>"; };
@@ -66,6 +68,7 @@
 		BF7F78E4841C5774C3717E62 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CE675FA51D4E1E383653EE4C /* Engine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Engine.swift; sourceTree = "<group>"; };
 		D684236CE4B1A311A639785C /* dx7_bank.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_bank.h; sourceTree = "<group>"; };
+		D6A3A75A807089F7B5AFF7B6 /* dx7_voice_fb01.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_fb01.c; sourceTree = "<group>"; };
 		DD7AF2F1C366EF422AA61691 /* Hexter.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Hexter.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E0382FCB2AE1B2FFB5C061B6 /* tx7_roms.dx7 */ = {isa = PBXFileReference; path = tx7_roms.dx7; sourceTree = "<group>"; };
 		E3C6BF2B07ADCCE08CEBD40C /* gui_images.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_images.h; sourceTree = "<group>"; };
@@ -96,6 +99,8 @@
 				73B330E2105F0AB1D2C2D48B /* dx7_voice_4op.h */,
 				197509265D223ED370CF1B4F /* dx7_voice_data.c */,
 				409100CCFBAB002832D6071E /* dx7_voice_data.h */,
+				D6A3A75A807089F7B5AFF7B6 /* dx7_voice_fb01.c */,
+				16B8666126CD866294F95D5A /* dx7_voice_fb01.h */,
 				991EEEA5F9F39E1B822D9EC3 /* dx7_voice_patches.c */,
 				72EAD61194614A2BCABA9749 /* dx7_voice_render.c */,
 				FBD01985162C49A2B685012A /* dx7_voice_tables.c */,
@@ -263,6 +268,7 @@
 				5879C833A0AC1E3B672EDDF5 /* dx7_voice.c in Sources */,
 				4AFA57C02D0B36158653A86B /* dx7_voice_4op.c in Sources */,
 				9A513D82FB616EC8582E3226 /* dx7_voice_data.c in Sources */,
+				D4BBEAB64A1646FCD7529BD7 /* dx7_voice_fb01.c in Sources */,
 				E598180FE637C90F0BC1674D /* dx7_voice_patches.c in Sources */,
 				82C35BFE405ED39056491B94 /* dx7_voice_render.c in Sources */,
 				27929F441C8516D29300C642 /* dx7_voice_tables.c in Sources */,
@@ -283,7 +289,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
-					"VERSION=\\\"2.6.1\\\"",
+					"VERSION=\\\"2.7.0\\\"",
 				);
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/../src $(SRCROOT)/Hexter/Bridge";
 				INFOPLIST_FILE = Hexter/Info.plist;
@@ -307,7 +313,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
-					"VERSION=\\\"2.6.1\\\"",
+					"VERSION=\\\"2.7.0\\\"",
 				);
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/../src $(SRCROOT)/Hexter/Bridge";
 				INFOPLIST_FILE = Hexter/Info.plist;
@@ -372,7 +378,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 2.6.1;
+				MARKETING_VERSION = 2.7.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -439,7 +445,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 2.6.1;
+				MARKETING_VERSION = 2.7.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

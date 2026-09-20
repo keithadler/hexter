@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(hexter
-    VERSION 2.6.1
+    VERSION 2.7.0
     DESCRIPTION "Yamaha DX7 modeling software synthesizer"
     HOMEPAGE_URL "https://github.com/keithadler/hexter"
     LANGUAGES C)
@@ -52,7 +52,8 @@ set(HEXTER_CORE_SOURCES
     src/dx7_voice_tables.c
     src/hexter_synth.c
     src/dx7_bank.c
-    src/dx7_voice_4op.c)
+    src/dx7_voice_4op.c
+    src/dx7_voice_fb01.c)
 
 add_library(hexter_core OBJECT ${HEXTER_CORE_SOURCES})
 target_include_directories(hexter_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -271,7 +272,7 @@ if(HEXTER_BUILD_DSSI)
             src/gui_interface.c src/gui_midi.c src/gui_patch_edit.c
             src/gui_retro_console.c src/gui_retro_editor.c src/gui_widgy_alg.c
             src/gui_widgy_editor.c src/dx7_voice_data.c src/dx7_voice_patches.c
-            src/dx7_bank.c src/dx7_voice_4op.c)
+            src/dx7_bank.c src/dx7_voice_4op.c src/dx7_voice_fb01.c)
         target_include_directories(hexter_gtk PRIVATE src ${HEXTER_GTK_INCLUDE_DIRS} ${DSSI_INCLUDE_DIRS})
         target_compile_definitions(hexter_gtk PRIVATE VERSION="${PROJECT_VERSION}" MIDI_ALSA=1)
         target_compile_options(hexter_gtk PRIVATE ${HEXTER_GTK_CFLAGS_OTHER} -Wno-deprecated-declarations)

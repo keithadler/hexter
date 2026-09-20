@@ -231,8 +231,22 @@ each one lands on the DX7 operator that four-operator one became.</p>
   not been tried against hardware.</p>
 </div>
 
-<p>Still out of reach: the DX11, FB-01 and reface DX. The FB-01 banks that ship with
-hexter are conversions, not the originals.</p>
+<p>The <strong>FB-01</strong> is four-operator as well, but not that family under another
+name: its bank is one message of its own, 6363 bytes holding 48 voices rather than 32,
+with seven-character names and every value stored as a pair of nibbles. hexter converts
+those too. Two of its values are kept as <em>attenuation</em>, where zero is loudest, so
+they are turned round on the way in; read the other way a patch comes out inside out and
+silent.</p>
+
+<p>That format was read from the
+<a href="https://sourceforge.net/projects/fb01editor/">FB01 Sound Editor</a> by Frederic
+Meslin. It is GPLv3 and hexter is GPL-2.0-or-later, so none of its code is here: what was
+taken is the description of a file format, which is a fact about the hardware. It is
+credited in AUTHORS. Like the TX81Z support this is built from the format rather than from
+a real dump, and the FB-01 banks shipping with hexter are old conversions, not originals,
+so they do not exercise it.</p>
+
+<p>Still out of reach: the DX11 and the reface DX.</p>
 
 <footer>
   <p>

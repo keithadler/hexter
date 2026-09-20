@@ -28,6 +28,7 @@
 #include "hexter_types.h"
 #include "dx7_voice.h"
 #include "dx7_voice_4op.h"
+#include "dx7_voice_fb01.h"
 #include "dx7_voice_data.h"
 #include "dx7_bank.h"
 
@@ -90,6 +91,36 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
     } else if (filelength < 128) {
         if (errmsg) *errmsg = strdup("patch file is too small");
         return 0;
+    }
+
+    /*
+     * An FB-01 bank is one whole message of its own and looks nothing like the
+     * DX7 family's, so it is recognized here rather than in the scan below.
+     * Forty-eight voices, converted the way the four-operator dumps are.
+     */
+    if (fb01_bank_identify(raw_patch_data, filelength)) {
+        int n = FB01_BANK_VOICES;
+
+        if (n > maxpatches) n = maxpatches;
+        if (n <= 0) {
+            if (errmsg) *errmsg = strdup("no room for the FB-01 voices");
+            return 0;
+        }
+        for (i = 0; i < n; i++) {
+            const uint8_t *v = raw_patch_data + FB01_VOICE_OFFSET
+                                              + i * FB01_VOICE_STRIDE
+                                              + FB01_VOICE_PARAM_OFF;
+            uint8_t unpacked[DX7_VOICE_SIZE_UNPACKED];
+            uint8_t buf[DX7_VOICE_SIZE_PACKED];   /* dx7_patch_pack must not overlap */
+
+            fb01_voice_to_dx7(v, unpacked);
+            dx7_patch_pack(unpacked, (dx7_patch_t *)buf, 0);
+            memcpy((uint8_t *)firstpatch + i * DX7_VOICE_SIZE_PACKED,
+                   buf, DX7_VOICE_SIZE_PACKED);
+        }
+        /* the FB-01 has only the one operator waveform, the sine */
+        if (op_waves) memset(op_waves, 0, (size_t)n * 6);
+        return n;
     }
 
     /* check if the file is a standard MIDI file */

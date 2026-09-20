@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.7.0 (2026-09-19)
+
+### Added
+- **FB-01 banks load.** The Yamaha FB-01 was the last four-operator machine hexter could
+  not read, and the README has listed it as out of reach for years. Its bank is one message
+  of its own rather than a variation on the DX7's: 6363 bytes holding **48** voices rather
+  than 32, seven-character names, and every value stored as a pair of nibbles. hexter reads
+  those banks now and converts each voice the same way it converts a DX100 or TX81Z one.
+- Two of the FB-01's values, an operator's level and its sustain, are stored as
+  **attenuation**, where zero is loudest. They are turned round on the way in. Read the
+  other way a patch would load without complaint and come out inside out and silent, so
+  there is a check that plays one and compares it against a wide-open bank.
+
+The format was read from the [FB01 Sound Editor](https://sourceforge.net/projects/fb01editor/)
+by Frederic Meslin, found by Reaper10. That program is GPLv3 and hexter is GPL-2.0-or-later,
+so none of its code is here: what was taken is the description of a file format, which is a
+fact about the hardware rather than anyone's code. It is credited in AUTHORS.
+
+Like the TX81Z support, this is built from the format rather than from a real dump. The
+FB-01 banks shipping in `banks/` are old conversions, not originals, so they do not
+exercise it. Real FB-01 bank files would be welcome.
+
 ## 2.6.1 (2026-09-19)
 
 ### Fixed

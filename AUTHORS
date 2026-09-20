@@ -80,6 +80,13 @@ by a large number of DX7 and synthesis enthusiasts, including:
         four-operator one. hexter's DX21/DX27/DX100 support follows it.
         Found for us by Reaper10.
 
+    - Frederic Meslin, whose FB01 Sound Editor
+        (https://sourceforge.net/projects/fb01editor/) documents the FB-01's
+        bank and voice layout, including the two values it stores as
+        attenuation. hexter's FB-01 support was written from that description.
+        That program is GPLv3 and none of its code is here. Found for us by
+        Reaper10.
+
     - Aaron Giles, whose ymfm (https://github.com/aaronsgiles/ymfm,
         BSD-3-Clause, Copyright (c) 2021 Aaron Giles) works out the eight
         operator waveforms of the four-operator Yamahas from the sine.

@@ -21,7 +21,7 @@ editor still build on Linux when their libraries are installed.
 | iPhone and iPad | the same app for iOS, in `ios/`; Apple does not allow a download, so you build it yourself with Xcode (see below) |
 | Platforms | Linux (x86_64 and arm64), macOS (Apple silicon and Intel), Windows (x64 and arm64), Android (8.0 or newer, 64-bit), iOS (16 or newer, built with Xcode) |
 | Banks | `.syx`, `.dx7`, `.mid` (sysex inside a MIDI file), `.tx7`, `.snd`, `.bnk`, `.dx2`, raw packed voices |
-| Four-operator banks | DX21, DX27, DX100 and TX81Z voices load too, converted, TX81Z operator waveforms included. See below |
+| Four-operator banks | DX21, DX27, DX100, TX81Z and FB-01 voices load too, converted, TX81Z operator waveforms included. See below |
 | Sysex | DX7 single voice, 32-voice bulk dump (six-operator or four-operator), voice and function parameter changes |
 | License | GPL-2.0-or-later |
 
@@ -232,6 +232,24 @@ that four-operator one became, so a TX81Z patch that leans on a shape other
 than the sine still sounds like itself. That part is built from the format
 rather than from a real dump: nobody has tried it against hardware yet. If you
 own one, send a bank and say what comes out wrong.
+
+The **FB-01** is four-operator as well, but it is not that family under another
+name: its bank is one message of its own, 6363 bytes holding 48 voices rather
+than 32, with seven-character names and every value stored as a pair of nibbles.
+hexter reads those banks now and converts them the same way. Two of its values
+are stored as **attenuation**, where zero is loudest, so they are turned round
+on the way in; read the other way a patch would come out inside out and silent.
+
+The FB-01's format was read from the
+[FB01 Sound Editor](https://sourceforge.net/projects/fb01editor/) by Frederic
+Meslin. That program is GPLv3 and hexter is GPL-2.0-or-later, so none of its
+code is here: what was taken is the description of a file format, which is a
+fact about the hardware. It is credited in AUTHORS.
+
+Like the TX81Z work, this is built from the format rather than from a real dump.
+The FB-01 banks that ship in `banks/` are conversions somebody made long ago,
+not originals, so they do not exercise it. If you have real FB-01 bank files,
+they would be worth more to this than any amount of re-reading.
 
 **Editing.** Send DX7 parameter-change sysex (from a hardware DX7, a
 librarian, or an editor such as Dexed) and hexter follows, including

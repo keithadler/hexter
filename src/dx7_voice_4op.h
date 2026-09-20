@@ -40,4 +40,22 @@
 void dx_4op_voice_to_dx7(const uint8_t *packed128, uint8_t *unpacked155,
                          uint8_t *op_wave6);
 
+/*
+ * The eight four-operator algorithms as the nearest six-operator one, with the
+ * DX7 operator each four-operator operator becomes. Operators are numbered the
+ * way people number them, 1 to 6.
+ *
+ * Every Yamaha four-operator machine of this era wires its operators the same
+ * eight ways in the same order, so the FB-01 converter shares this table.
+ */
+typedef struct {
+    uint8_t dx7_algorithm;          /* 1 to 32, as printed on the instrument */
+    uint8_t dx7_op[4];              /* for four-operator OP1, OP2, OP3, OP4 */
+} dx_4op_algorithm_t;
+
+extern const dx_4op_algorithm_t dx_4op_algorithm_map[8];
+
+/* saw, square, triangle, sample and hold, in the DX7's own numbering */
+extern const uint8_t dx_4op_lfo_wave_map[4];
+
 #endif /* _DX7_VOICE_4OP_H */
