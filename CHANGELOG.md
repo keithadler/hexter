@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.5.1 (2026-09-20)
 
 ### Fixed
 - The Linux standalone in 2.5.0 linked JACK, which means it refuses to start at all on a
