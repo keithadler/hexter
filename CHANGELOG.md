@@ -29,6 +29,21 @@
   sounding**. It carries the keyboard level scaling depth, and it carries amplitude
   modulation sensitivity.
 
+### Tested
+- **The conversions have real test suites now, and the engine-side check count goes from 236
+  to 445.** Three new ones, each pinning behaviour value by value rather than spot-checking a
+  voice: the FB-01 conversion (73 checks), the DX21 family's (49) and the operator waveforms
+  (87). Every envelope table is walked entry by entry, every algorithm has its operator
+  routing checked and its spare operators checked silent, and every value of detune, ratio,
+  velocity, feedback and LFO waveform is converted and compared.
+- Both converters now get **4000 random voices each**, asserting that nothing they produce is
+  outside what a DX7 voice allows. That caught a real out-of-range byte the moment the
+  frequency table was bypassed during testing, which no spot check was looking at.
+- All of it was confirmed by breaking the behaviour each check names and watching that check
+  fail. One did not, and was fixed: the check that the waveform tables carry their
+  interpolation guard entry was passing whatever the code did, because the edit that was
+  supposed to break it had silently not applied.
+
 ### Corrected
 - **2.7.3 said the FB-01's user bank is the form you are most likely to be sent. That was
   wrong.** The manual lists both dumps as things the instrument sends, which is what the

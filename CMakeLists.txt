@@ -320,6 +320,21 @@ if(HEXTER_BUILD_TESTS)
     target_compile_options(test_engine PRIVATE ${HEXTER_C_FLAGS})
     add_test(NAME engine COMMAND test_engine ${CMAKE_CURRENT_SOURCE_DIR}/extra)
 
+    add_executable(test_fb01 tests/test_fb01.c)
+    target_link_libraries(test_fb01 PRIVATE hexter_engine)
+    target_compile_options(test_fb01 PRIVATE ${HEXTER_C_FLAGS})
+    add_test(NAME fb01 COMMAND test_fb01)
+
+    add_executable(test_4op tests/test_4op.c)
+    target_link_libraries(test_4op PRIVATE hexter_engine)
+    target_compile_options(test_4op PRIVATE ${HEXTER_C_FLAGS})
+    add_test(NAME four_operator COMMAND test_4op)
+
+    add_executable(test_waveforms tests/test_waveforms.c)
+    target_link_libraries(test_waveforms PRIVATE hexter_engine)
+    target_compile_options(test_waveforms PRIVATE ${HEXTER_C_FLAGS})
+    add_test(NAME waveforms COMMAND test_waveforms)
+
     if(HEXTER_BUILD_CLAP)
         add_executable(test_clap tests/test_clap.c)
         target_link_libraries(test_clap PRIVATE clap ${CMAKE_DL_LIBS})
