@@ -253,10 +253,18 @@ GPL-2.0-or-later, so no code from either is here: what was taken is the
 description of a file format, which is a fact about the hardware and one Yamaha
 published itself. Both are credited in AUTHORS.
 
-Like the TX81Z work, this is built from the format rather than from a real dump.
-The FB-01 banks that ship in `banks/` are conversions somebody made long ago,
-not originals, so they do not exercise it. If you have real FB-01 bank files,
-they would be worth more to this than any amount of re-reading.
+**This one has been tested against real hardware dumps.** Sean Bolton sent 56
+FB-01 banks, 2688 voices, and every one of them loads. He also sent the
+converter he wrote in 1986 and put in the public domain, tuned by ear between
+his own FB-01 and a TX7, which is what produced the `fb01_roms_converted_*.dx7`
+banks that ship here. hexter uses those tables now rather than deriving the
+values from the format, which is what it did before and which was correct as a
+reading of the bytes and wrong as a sound.
+
+Three things hexter still does that his converter does not, each checked over
+the same 2688 voices: it silences an operator the FB-01 switched off, which
+**34% of those voices have**, and it carries the keyboard level scaling depth
+and the amplitude modulation sensitivity.
 
 **Editing.** Send DX7 parameter-change sysex (from a hardware DX7, a
 librarian, or an editor such as Dexed) and hexter follows, including

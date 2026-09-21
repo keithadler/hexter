@@ -644,7 +644,7 @@ build_fb01_bank(uint8_t *out, int loud)
 {
     static const char *names[2] = { "FB01 V1", "FB01 V2" };
     /* attenuation, so 0 is the loudest and 127 is silence */
-    static const int level[4]   = { 0, 32, 64, 96 };
+    static const int level[4]   = { 24, 48, 72, 96 };
     static const int sustain[4] = { 0, 15, 5, 0 };
     static const int fine[4]    = { 2, 6, 0, 0 };
     static const int coarse[4]  = { 0, 0, 1, 0 };
@@ -711,8 +711,8 @@ test_fb01_bank(void)
     hexter_engine_select_program(e, 0);
     hexter_engine_get_current_patch(e, cur);
 
-    /* algorithm 2 stands in as DX7 algorithm 14, which is stored as 13, and
-     * sends the four operators to DX7 4, 5, 3 and 6 */
+    /* algorithm 2 stands in as DX7 algorithm 14, stored as 13, and sends the
+     * four operators to DX7 3, 4, 5 and 6 */
     CHECK(cur[134] == 13, "algorithm 2 became DX7 algorithm %d", cur[134] + 1);
     CHECK(cur[135] == 5, "feedback carried across as %d", cur[135]);
 
@@ -723,50 +723,60 @@ test_fb01_bank(void)
      * the DX7 operators the algorithm sends them to. Reading it the wrong way
      * round would turn every patch inside out and still load cleanly.
      */
-    CHECK(cur[(6 - 4) * 21 + 16] == 99, "OP1, silent-coded 0, became level %d on DX7 OP4",
-          cur[(6 - 4) * 21 + 16]);
-    CHECK(cur[(6 - 5) * 21 + 16] == 74, "OP2, coded 32, became %d on DX7 OP5",
-          cur[(6 - 5) * 21 + 16]);
-    CHECK(cur[(6 - 3) * 21 + 16] == 49, "OP3, coded 64, became %d on DX7 OP3",
+    CHECK(cur[(6 - 3) * 21 + 16] == 75, "OP1, coded 24, became level %d on DX7 OP3",
           cur[(6 - 3) * 21 + 16]);
-    CHECK(cur[(6 - 6) * 21 + 16] == 24, "OP4, coded 96, became %d on DX7 OP6",
+    CHECK(cur[(6 - 4) * 21 + 16] == 51, "OP2, coded 48, became %d on DX7 OP4",
+          cur[(6 - 4) * 21 + 16]);
+    CHECK(cur[(6 - 5) * 21 + 16] == 27, "OP3, coded 72, became %d on DX7 OP5",
+          cur[(6 - 5) * 21 + 16]);
+    CHECK(cur[(6 - 6) * 21 + 16] == 3, "OP4, coded 96, became %d on DX7 OP6",
           cur[(6 - 6) * 21 + 16]);
     /* the two operators with nowhere to come from stay silent */
     CHECK(cur[(6 - 1) * 21 + 16] == 0 && cur[(6 - 2) * 21 + 16] == 0,
           "the spare operators are silent");
 
-    /* sustain is attenuation too: stored 0 is the loudest, stored 15 silent */
-    CHECK(cur[(6 - 4) * 21 + 5] == 99, "OP1's sustain, coded 0, became %d",
-          cur[(6 - 4) * 21 + 5]);
-    CHECK(cur[(6 - 5) * 21 + 5] == 0, "OP2's sustain, coded 15, became %d",
-          cur[(6 - 5) * 21 + 5]);
-    CHECK(cur[(6 - 3) * 21 + 5] == 66, "OP3's sustain, coded 5, became %d",
+    /*
+     * Sustain is attenuation too, but it does not run to silence: the tuned
+     * table stops at 35, so an operator with its sustain wound right down is
+     * quiet rather than gone.
+     */
+    CHECK(cur[(6 - 3) * 21 + 5] == 99, "OP1's sustain, coded 0, became %d",
           cur[(6 - 3) * 21 + 5]);
+    CHECK(cur[(6 - 4) * 21 + 5] == 35, "OP2's sustain, coded 15, became %d (the floor)",
+          cur[(6 - 4) * 21 + 5]);
+    CHECK(cur[(6 - 5) * 21 + 5] == 77, "OP3's sustain, coded 5, became %d",
+          cur[(6 - 5) * 21 + 5]);
 
     /* detune runs 0-3 one way and 5-7 the other, around the DX7's 7 */
-    CHECK(cur[(6 - 4) * 21 + 20] == 9, "detune 2 became %d", cur[(6 - 4) * 21 + 20]);
-    CHECK(cur[(6 - 5) * 21 + 20] == 5, "detune 6 became %d", cur[(6 - 5) * 21 + 20]);
+    CHECK(cur[(6 - 3) * 21 + 20] == 9, "detune 2 became %d", cur[(6 - 3) * 21 + 20]);
+    CHECK(cur[(6 - 4) * 21 + 20] == 5, "detune 6 became %d", cur[(6 - 4) * 21 + 20]);
 
     /* the coarse detune becomes a frequency fine value */
-    CHECK(cur[(6 - 4) * 21 + 18] == 1 && cur[(6 - 4) * 21 + 19] == 0,
+    CHECK(cur[(6 - 3) * 21 + 18] == 1 && cur[(6 - 3) * 21 + 19] == 0,
           "ratio 1 with no coarse detune became coarse %d fine %d",
-          cur[(6 - 4) * 21 + 18], cur[(6 - 4) * 21 + 19]);
-    CHECK(cur[(6 - 3) * 21 + 19] == 41, "coarse detune 1 became fine %d",
-          cur[(6 - 3) * 21 + 19]);
+          cur[(6 - 3) * 21 + 18], cur[(6 - 3) * 21 + 19]);
+    CHECK(cur[(6 - 5) * 21 + 19] == 41, "coarse detune 1 became fine %d",
+          cur[(6 - 5) * 21 + 19]);
 
-    /* envelope and scaling */
-    CHECK(cur[(6 - 4) * 21 + 0] == 99, "maximum attack became %d", cur[(6 - 4) * 21 + 0]);
-    CHECK(cur[(6 - 4) * 21 + 13] == 7, "maximum rate scaling became %d", cur[(6 - 4) * 21 + 13]);
-    CHECK(cur[(6 - 4) * 21 + 9] == 99 && cur[(6 - 4) * 21 + 11] == 3,
-          "level scaling depth %d and curve %d", cur[(6 - 4) * 21 + 9], cur[(6 - 4) * 21 + 11]);
-    CHECK(cur[(6 - 4) * 21 + 15] == 7, "velocity sensitivity became %d", cur[(6 - 4) * 21 + 15]);
-    CHECK(cur[(6 - 4) * 21 + 14] == 2, "amplitude mod sensitivity became %d", cur[(6 - 4) * 21 + 14]);
+    /* envelope and scaling, through the tuned tables: the fastest attack the
+     * FB-01 has is not quite the fastest the DX7 has */
+    CHECK(cur[(6 - 3) * 21 + 0] == 98, "maximum attack became %d", cur[(6 - 3) * 21 + 0]);
+    CHECK(cur[(6 - 3) * 21 + 13] == 6, "maximum rate scaling became %d", cur[(6 - 3) * 21 + 13]);
+    CHECK(cur[(6 - 3) * 21 + 9] == 99 && cur[(6 - 3) * 21 + 11] == 3,
+          "level scaling depth %d and curve %d", cur[(6 - 3) * 21 + 9], cur[(6 - 3) * 21 + 11]);
+    CHECK(cur[(6 - 3) * 21 + 15] == 7, "velocity sensitivity became %d", cur[(6 - 3) * 21 + 15]);
+    CHECK(cur[(6 - 3) * 21 + 14] == 2, "amplitude mod sensitivity became %d", cur[(6 - 3) * 21 + 14]);
 
-    /* voice-level */
-    CHECK(cur[137] == 99, "LFO speed carried across as %d", cur[137]);
+    /*
+     * Voice level. The LFO speed is a whole byte on the FB-01 and its fastest
+     * is far slower than the DX7's, so the maximum comes across as about 21,
+     * not 99. Reading it as seven bits and stretching it was the bug that made
+     * every converted patch wobble three times too fast.
+     */
+    CHECK(cur[137] == 21, "the fastest FB-01 LFO became %d, not 99", cur[137]);
     CHECK(cur[142] == 0, "triangle LFO became wave %d", cur[142]);
-    CHECK(cur[141] == 1, "the sync bit reads the other way round (%d)", cur[141]);
-    CHECK(cur[143] == 3, "pitch mod sensitivity 6 halved to %d", cur[143]);
+    CHECK(cur[141] == 0, "the sync bit means what it says (%d)", cur[141]);
+    CHECK(cur[143] == 6, "pitch mod sensitivity 6 carried across as %d", cur[143]);
     CHECK(cur[144] == 20, "four semitones down became transpose %d", cur[144]);
 
     /* the enable bits switch an operator off */
@@ -774,8 +784,8 @@ test_fb01_bank(void)
     hexter_engine_get_current_patch(e, cur);
     CHECK(cur[(6 - 6) * 21 + 16] == 0, "OP4 switched off is silent (level %d)",
           cur[(6 - 6) * 21 + 16]);
-    CHECK(cur[(6 - 4) * 21 + 16] == 99, "while OP1 still sounds (level %d)",
-          cur[(6 - 4) * 21 + 16]);
+    CHECK(cur[(6 - 3) * 21 + 16] == 75, "while OP1 still sounds (level %d)",
+          cur[(6 - 3) * 21 + 16]);
 
     /* And it makes a sound. The bank above is deliberately quiet, since its
      * levels are spread out to prove the attenuation is read the right way

@@ -93,6 +93,12 @@ by a large number of DX7 and synthesis enthusiasts, including:
         format. It agrees field for field, and none of its code is here
         either. Also found for us by Reaper10.
 
+    - Sean Bolton again, for FB_TX_Conv.c, which he wrote in 1986 and placed
+        in the public domain. Its conversion tables are not arithmetic: he
+        tuned them by ear between his own FB-01 and TX7, and they are what
+        hexter's FB-01 conversion uses. The banks shipped as
+        fb01_roms_converted_*.dx7 were made with it.
+
     - Aaron Giles, whose ymfm (https://github.com/aaronsgiles/ymfm,
         BSD-3-Clause, Copyright (c) 2021 Aaron Giles) works out the eight
         operator waveforms of the four-operator Yamahas from the sine.

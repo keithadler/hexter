@@ -39,8 +39,13 @@
  *     then the same 48 voices, then F7            = 6363 bytes
  *
  * The only difference is the header, three bytes longer in the second, so the
- * voices start at 71 or at 74. Somebody dumping their own sounds is likely to
- * send the first, since that is the bank they can write to.
+ * voices start at 71 or at 74.
+ *
+ * Which one turns up: the manual lists both under the dumps the FB-01 sends,
+ * but Sean Bolton, who owned one, recalls the shorter form being something it
+ * would accept and never send, and all 56 banks in his collection are the
+ * longer one. So expect voice bank x from real hardware, and read the other
+ * because the manual documents it and other software writes it.
  *
  * Every value is a pair of bytes holding one 8-bit number, low nibble first,
  * so the 128 bytes of a voice are 64 parameters.

@@ -1,12 +1,48 @@
 # Changelog
 
+## 2.8.0 (2026-09-21)
+
+### Changed
+- **FB-01 banks are converted with Sean Bolton's own tables now, and they sound noticeably
+  different.** He wrote that conversion in 1986, by ear, sitting between an FB-01 and a TX7,
+  and put it in the public domain; it is what produced the `fb01_roms_converted_*.dx7` banks
+  hexter has shipped for years. hexter had been deriving those values from the format
+  instead, which was correct as a reading and wrong as a sound.
+
+  What that fixes, measured over **2688 voices from 56 real FB-01 banks**:
+  - **The LFO ran about three times too fast.** Its speed is a whole byte, 0 to 255, and was
+    being read as seven bits and stretched to the DX7's full range. Mean speed across the
+    collection was 90 of 99 where it should be 30.
+  - **Pitch modulation was halved** for a reason that turned out to be a guess.
+  - **The LFO key sync bit was inverted.**
+  - The envelope rates were linear where the hardware's are not, the output level was
+    rescaled from 127 rather than subtracted from 99, and the sustain level fell to silence
+    where it should stop at 35.
+  - The FB-01's algorithm 2 puts its operators in a different order than hexter had, and its
+    algorithm 8 maps to DX7 29 rather than 31. The DX21 family keeps its own table, because
+    no hardware has been put in front of that one.
+
+### Kept
+- **Three things hexter does that his converter does not**, all verified against the same
+  2688 voices. It honors the operator enable bits, so an operator the FB-01 switched off
+  stays silent: **920 of those voices, 34%, have one, and his conversion leaves it
+  sounding**. It carries the keyboard level scaling depth, and it carries amplitude
+  modulation sensitivity.
+
+### Corrected
+- **2.7.3 said the FB-01's user bank is the form you are most likely to be sent. That was
+  wrong.** The manual lists both dumps as things the instrument sends, which is what the
+  claim rested on, but Sean Bolton owned an FB-01 and remembers the short form as one it
+  would receive and never transmit, and every one of the 56 banks in his collection is the
+  long form. Reading both forms is still right, because the manual documents it and other
+  software writes it. The reasoning given for it was not.
+
 ## 2.7.3 (2026-09-20)
 
 ### Added
 - **The FB-01's user bank loads.** The manual gives two bank dumps, and hexter only read
   one of them. "Voice bank x" sits behind a seven-byte header; **"voice bank 0", the bank an
-  owner can actually write to and therefore the one they are most likely to send you**, sits
-  behind a four-byte one. The 49 packets after the header are identical. Both forms are read
+  owner can actually write to**, sits behind a four-byte one. The 49 packets after the header are identical. Both forms are read
   now, and a bank in either converts to exactly the same voices.
 
 This was found by reading Edisyn, which accepts both and cites the page of the manual that
