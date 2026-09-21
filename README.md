@@ -261,10 +261,17 @@ banks that ship here. hexter uses those tables now rather than deriving the
 values from the format, which is what it did before and which was correct as a
 reading of the bytes and wrong as a sound.
 
-Three things hexter still does that his converter does not, each checked over
-the same 2688 voices: it silences an operator the FB-01 switched off, which
-**34% of those voices have**, and it carries the keyboard level scaling depth
-and the amplitude modulation sensitivity.
+Three things hexter still does that his converter does not. It silences an
+operator the FB-01 switched off, which **34.2% of those voices have**, and it
+carries the amplitude modulation sensitivity, which 31.1% of them have. It also
+carries the keyboard level scaling depth, and that one is honestly untested:
+the depth is zero in all 10752 operators of the corpus, so no voice here
+exercises it.
+
+Everything else now agrees with his converter byte for byte, all 2688 voices,
+on every parameter that sounds. [`tools/fb01-compare`](tools/fb01-compare)
+accounts for each remaining difference per voice and can be made to fail by
+changing one nibble of one table.
 
 **Editing.** Send DX7 parameter-change sysex (from a hardware DX7, a
 librarian, or an editor such as Dexed) and hexter follows, including
