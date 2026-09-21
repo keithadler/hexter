@@ -81,25 +81,47 @@ dx7_op_base(int op)          /* op is 1 to 6 */
 }
 
 int
-fb01_bank_at(const uint8_t *data, long length, long at, int midshift)
+fb01_bank_at(const uint8_t *data, long length, long at, int midshift,
+             fb01_bank_layout_t *layout)
 {
     /* byte k of the message, which is shifted along inside a MIDI file */
     #define B(k) data[at + (k) + midshift]
+    long size, voices, params;
     int i;
 
-    if (at < 0 || at + FB01_BANK_SIZE + midshift > length) return 0;
-    if (data[at] != 0xf0) return 0;                     /* the F0 itself is not shifted */
-    if (B(1) != 0x43 || B(2) != 0x75) return 0;         /* Yamaha, FB-01 */
-    if (B(3) > 0x0f) return 0;                          /* system channel */
-    if (B(4) != 0x00 || B(5) != 0x00) return 0;
-    if (B(7) != 0x00 || B(8) != 0x40) return 0;         /* 64 bank bytes follow */
-    if (B(FB01_BANK_SIZE - 1) != 0xf7) return 0;
+    if (at < 0 || at + 9 + midshift > length) return 0;
+    if (data[at] != 0xf0 || B(1) != 0x43) return 0;   /* the F0 is not shifted */
+
+    if (B(2) == 0x75) {
+        /* voice bank x: F0 43 75 0n 00 00 0x */
+        if (B(3) > 0x0f) return 0;                    /* system channel */
+        if (B(4) != 0x00 || B(5) != 0x00) return 0;
+        size   = FB01_BANK_SIZE;
+        voices = FB01_VOICE_OFFSET;
+        params = 7;
+    } else if (B(2) <= 0x0f && B(3) == 0x0c) {
+        /* voice bank 0: F0 43 0n 0C */
+        size   = FB01_BANK0_SIZE;
+        voices = FB01_BANK0_VOICE_OFF;
+        params = 4;
+    } else {
+        return 0;
+    }
+
+    if (at + size + midshift > length) return 0;
+    if (B(params) != 0x00 || B(params + 1) != 0x40) return 0;  /* 64 bank bytes */
+    if (B(size - 1) != 0xf7) return 0;
 
     /* every voice announces its own 128 bytes, which is a strong check that
      * this is the message it claims to be and not something the same length */
     for (i = 0; i < FB01_BANK_VOICES; i++) {
-        long v = FB01_VOICE_OFFSET + (long)i * FB01_VOICE_STRIDE;
+        long v = voices + (long)i * FB01_VOICE_STRIDE;
         if (B(v) != 0x01 || B(v + 1) != 0x00) return 0;
+    }
+
+    if (layout) {
+        layout->size = size;
+        layout->voice_offset = voices;
     }
     return 1;
     #undef B

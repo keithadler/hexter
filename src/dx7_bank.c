@@ -79,6 +79,7 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
     int patchstart;
     int midshift;
     int datastart;
+    fb01_bank_layout_t fb01;
     int i;
     int op;
 
@@ -153,13 +154,14 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
             count += DX_4OP_DUMP_VOICES;
             patchstart += (DX7_DUMP_SIZE_VOICE_BULK - 1);
 
-        } else if (fb01_bank_at(raw_patch_data, filelength, patchstart, midshift)) {
-            /* An FB-01 bank: its own message, 48 voices of its own layout.
+        } else if (fb01_bank_at(raw_patch_data, filelength, patchstart, midshift,
+                                &fb01)) {
+            /* An FB-01 bank, in either of the two forms the manual gives.
              * Converted here so that it works wherever any other dump does,
              * including inside a MIDI file. */
             for (i = 0; i < FB01_BANK_VOICES && count + i < maxpatches; i++) {
                 const uint8_t *v = raw_patch_data + patchstart + midshift
-                                 + FB01_VOICE_OFFSET + i * FB01_VOICE_STRIDE
+                                 + fb01.voice_offset + i * FB01_VOICE_STRIDE
                                  + FB01_VOICE_PARAM_OFF;
                 uint8_t unpacked[DX7_VOICE_SIZE_UNPACKED];
                 uint8_t buf[DX7_VOICE_SIZE_PACKED];   /* dx7_patch_pack must not overlap */
@@ -172,7 +174,7 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
                 if (op_waves) memset(op_waves[count + i], 0, 6);
             }
             count += i;
-            patchstart += FB01_BANK_SIZE + midshift - 1;
+            patchstart += fb01.size + midshift - 1;
 
         } else if (raw_patch_data[patchstart] == 0xf0 &&
                    raw_patch_data[patchstart + midshift + 1] == 0x43 &&

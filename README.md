@@ -238,7 +238,8 @@ The **FB-01** is four-operator as well, but it is not that family under another
 name: its bank is one message of its own, 6363 bytes holding 48 voices rather
 than 32, with seven-character names and every value stored as a pair of nibbles.
 hexter reads those banks now and converts them the same way, from a bare `.syx` or from
-inside a MIDI file, as with every other format it understands. Two of its values
+inside a MIDI file, as with every other format it understands. Both of the dump forms in
+the manual work: the user bank an owner can write to, and the read-only banks. Two of its values
 are stored as **attenuation**, where zero is loudest, so they are turned round
 on the way in; read the other way a patch would come out inside out and silent.
 

@@ -626,6 +626,19 @@ fb01_sum(const uint8_t *p, int n)
  * switched on; voice 1 has OP4 switched off, so the enable bits can be seen
  * to do something.
  */
+/*
+ * Rewrite a "voice bank x" dump as the "voice bank 0" one: the same 49 packets
+ * behind a four-byte header instead of a seven-byte one. Returns the length.
+ */
+static size_t
+fb01_as_bank0(const uint8_t *in, uint8_t *out)
+{
+    out[0] = 0xf0; out[1] = 0x43; out[2] = 0x00; out[3] = 0x0c;
+    /* everything from the bank's own packet onward is identical */
+    memcpy(out + 4, in + 7, FB01_BANK_SIZE - 7);
+    return FB01_BANK0_SIZE;
+}
+
 static void
 build_fb01_bank(uint8_t *out, int loud)
 {
@@ -686,7 +699,7 @@ test_fb01_bank(void)
     int n;
 
     build_fb01_bank(bank, 0);
-    CHECK(fb01_bank_at(bank, FB01_BANK_SIZE, 0, 0), "the bank identifies as an FB-01 bank");
+    CHECK(fb01_bank_at(bank, FB01_BANK_SIZE, 0, 0, NULL), "the bank identifies as an FB-01 bank");
 
     n = hexter_engine_load_bank_memory(e, bank, FB01_BANK_SIZE, "fb01.syx", 0, &err);
     CHECK(n == 48, "an FB-01 bank loaded %d voices (%s)", n, err ? err : "no error");
@@ -825,9 +838,9 @@ test_fb01_bank(void)
         mid[len++] = (uint8_t)(body & 0x7f);
         memcpy(mid + len, bank + 1, (size_t)body); len += (size_t)body;
 
-        CHECK(fb01_bank_at(mid, (long)len, (long)at, 2),
+        CHECK(fb01_bank_at(mid, (long)len, (long)at, 2, NULL),
               "the bank is found inside a MIDI file");
-        CHECK(!fb01_bank_at(mid, (long)len, (long)at, 0),
+        CHECK(!fb01_bank_at(mid, (long)len, (long)at, 0, NULL),
               "and not without allowing for the event's length bytes");
         CHECK(hexter_engine_load_bank_memory(m, mid, len, "fb01.mid", 0, &merr) == 48,
               "an FB-01 bank in a MIDI file loaded (%s)", merr ? merr : "no error");
@@ -837,17 +850,55 @@ test_fb01_bank(void)
         hexter_engine_free(m);
     }
 
+    /*
+     * The manual gives two bank dumps. "Voice bank x" is the one above; "voice
+     * bank 0" is the user bank, behind a shorter header, and it is the one an
+     * owner is most likely to send, being the bank they can write to.
+     */
+    {
+        static uint8_t bank0[FB01_BANK0_SIZE];
+        hexter_engine_t *z = hexter_engine_new(44100.0f);
+        fb01_bank_layout_t layout;
+        char zname[11], *zerr = NULL;
+        size_t zlen = fb01_as_bank0(bank, bank0);
+
+        CHECK(zlen == FB01_BANK0_SIZE, "the user bank form is %zu bytes", zlen);
+        CHECK(fb01_bank_at(bank0, (long)zlen, 0, 0, &layout),
+              "it is recognized as an FB-01 bank");
+        CHECK(layout.size == FB01_BANK0_SIZE && layout.voice_offset == FB01_BANK0_VOICE_OFF,
+              "with its own layout (%ld bytes, voices at %ld)",
+              layout.size, layout.voice_offset);
+        CHECK(hexter_engine_load_bank_memory(z, bank0, zlen, "fb01-bank0.syx", 0, &zerr) == 48,
+              "and loads its 48 voices (%s)", zerr ? zerr : "no error");
+        free(zerr);
+        hexter_engine_get_program_name(z, 0, zname);
+        CHECK(!strcmp(zname, "FB01 V1   "), "program 1 is '%s'", zname);
+
+        /* and it converts to exactly what the other form converts to, since it
+         * is the same voices behind a different header */
+        {
+            uint8_t from_x[155], from_0[155];
+            hexter_engine_select_program(e, 0);
+            hexter_engine_get_current_patch(e, from_x);
+            hexter_engine_select_program(z, 0);
+            hexter_engine_get_current_patch(z, from_0);
+            CHECK(!memcmp(from_x, from_0, 155),
+                  "both forms give the same converted voice");
+        }
+        hexter_engine_free(z);
+    }
+
     /* things that are not an FB-01 bank are not taken for one */
     {
         static uint8_t other[FB01_BANK_SIZE];
 
         memcpy(other, bank, FB01_BANK_SIZE);
         other[2] = 0x09;                       /* not the FB-01's id */
-        CHECK(!fb01_bank_at(other, FB01_BANK_SIZE, 0, 0), "a different model is refused");
+        CHECK(!fb01_bank_at(other, FB01_BANK_SIZE, 0, 0, NULL), "a different model is refused");
         memcpy(other, bank, FB01_BANK_SIZE);
         other[FB01_VOICE_OFFSET] = 0x02;       /* a voice that claims another length */
-        CHECK(!fb01_bank_at(other, FB01_BANK_SIZE, 0, 0), "a wrong voice header is refused");
-        CHECK(!fb01_bank_at(bank, FB01_BANK_SIZE - 1, 0, 0), "the wrong length is refused");
+        CHECK(!fb01_bank_at(other, FB01_BANK_SIZE, 0, 0, NULL), "a wrong voice header is refused");
+        CHECK(!fb01_bank_at(bank, FB01_BANK_SIZE - 1, 0, 0, NULL), "the wrong length is refused");
     }
 
     hexter_engine_free(e);

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(hexter
-    VERSION 2.7.2
+    VERSION 2.7.3
     DESCRIPTION "Yamaha DX7 modeling software synthesizer"
     HOMEPAGE_URL "https://github.com/keithadler/hexter"
     LANGUAGES C)

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.7.3 (2026-09-20)
+
+### Added
+- **The FB-01's user bank loads.** The manual gives two bank dumps, and hexter only read
+  one of them. "Voice bank x" sits behind a seven-byte header; **"voice bank 0", the bank an
+  owner can actually write to and therefore the one they are most likely to send you**, sits
+  behind a four-byte one. The 49 packets after the header are identical. Both forms are read
+  now, and a bank in either converts to exactly the same voices.
+
+This was found by reading Edisyn, which accepts both and cites the page of the manual that
+says so. Yamaha's own Transmitted Dumps table confirms it: `F0 43 0n 0C` for the user bank
+and `F0 43 75 0n 00 00 0x` for the rest, 6360 and 6363 bytes.
+
 ## Unreleased
 
 ### Changed
