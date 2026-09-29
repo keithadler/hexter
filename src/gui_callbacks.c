@@ -712,7 +712,7 @@ on_test_note_button_press(GtkWidget *widget, gpointer data)
     int state = GPOINTER_TO_INT(data);
 
     GUIDB_MESSAGE(DB_GUI, " on_test_note_button_press: button %s\n",
-                  state ? "pressed" : "released")
+                  state ? "pressed" : "released");
 
     if (state) {  /* button pressed */
 

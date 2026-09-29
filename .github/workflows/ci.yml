@@ -69,6 +69,13 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: ./tools/check-source-lists.sh
 
+      # The debug macros are statements now, so their calls need semicolons.
+      # One did not have one, in a file only the Linux job compiles, so it
+      # passed every local build and five of six CI jobs. This needs no GTK.
+      - name: Debug macro calls are terminated
+        if: matrix.os == 'ubuntu-latest'
+        run: ./tools/check-debug-macros.sh
+
       # Matches what the release ships: the standalone everybody gets does not link
       # JACK, because that would stop it starting on a machine without one.
       - name: Configure
