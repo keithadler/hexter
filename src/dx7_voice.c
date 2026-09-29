@@ -749,6 +749,9 @@ void
 dx7_portamento_set_segment(hexter_instance_t *instance, dx7_portamento_t *port)
 {
     /* -FIX- implement portamento multi-segment curve */
+    /* which is what `instance` is here for; it is unused until then, and said
+     * so rather than left as a warning in everybody's build */
+    (void)instance;
     port->increment = (port->target - port->value) / (double)port->duration;
 }
 

@@ -125,6 +125,9 @@ int sysex_enabled = 0;
 int
 sysex_start(sysex_callback_function *handler, char **errmsg)
 {
+    /* the stub for builds without sys-ex support, which has no use for the
+     * callback it is handed */
+    (void)handler;
     *errmsg = "MIDI sys-ex support not available!\n";
     sysex_enabled = 0;
     return 0;

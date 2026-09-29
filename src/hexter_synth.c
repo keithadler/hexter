@@ -898,9 +898,17 @@ hexter_instance_select_program(hexter_instance_t *instance, unsigned long bank,
                                unsigned long program)
 {
     /* no support for banks, so we just ignore the bank number */
+    (void)bank;
     if (program >= 128) return;
     instance->current_program = program;
-    if (instance->overlay_program == program) { /* edit buffer applies */
+    /*
+     * overlay_program is an int holding -1 when there is no overlay, and
+     * program is unsigned. Comparing them directly did the right thing, but
+     * only because -1 converts to a value no program number can reach, which
+     * is not something a reader should have to work out. Said outright here.
+     */
+    if (instance->overlay_program >= 0 &&
+        (unsigned long)instance->overlay_program == program) { /* edit buffer applies */
         memcpy(instance->current_patch_buffer, instance->overlay_patch_buffer, DX7_VOICE_SIZE_UNPACKED);
         memcpy(instance->current_op_wave, instance->overlay_op_wave, MAX_DX7_OPERATORS);
     } else {
@@ -1117,7 +1125,7 @@ hexter_instance_render_voices(hexter_instance_t *instance, unsigned long samples
     dx7_lfo_update(instance, sample_count);
 
     /* render each active voice */
-    for (i = 0; i < instance->max_voices; i++) {
+    for (i = 0; i < (unsigned long)instance->max_voices; i++) {
         voice = instance->voice[i];
 
         if (_PLAYING(voice)) {

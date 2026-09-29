@@ -24,6 +24,10 @@
 #ifndef _HEXTER_H
 #define _HEXTER_H
 
+/* the debug macros name fprintf and printf even when they expand to nothing,
+ * so that their arguments stay type checked in a release build */
+#include <stdio.h>
+
 /* ==== debugging ==== */
 
 /* DSSP_DEBUG bits */
@@ -61,9 +65,28 @@
 
 #else  /* !DSSP_DEBUG */
 
-#define DEBUG_MESSAGE(type, ...)
-#define GUIDB_MESSAGE(type, ...)
-#define TUIDB_MESSAGE(type, ...)
+/*
+ * Expanding to nothing costs two things worth having.
+ *
+ * The arguments stop being type checked, so a format string that does not
+ * match what is passed to it compiles clean in every build anybody ships and
+ * only breaks when somebody turns debugging on. And a parameter used solely by
+ * a debug message becomes unused, which is where four of this project's six
+ * compiler warnings came from: real warnings about parameters that are not
+ * really unused, sitting in the build where a warning about something that
+ * matters would have to be spotted among them.
+ *
+ * `if (0)` gives the compiler the whole call to check and then discards it.
+ * Nothing is emitted at any optimisation level, including -O0, because the
+ * branch is a constant. The do/while is the usual guard so that the macro is
+ * one statement and still needs its semicolon.
+ */
+#define DEBUG_MESSAGE(type, ...) \
+    do { if (0) fprintf(stderr, "hexter.so" __VA_ARGS__); } while (0)
+#define GUIDB_MESSAGE(type, ...) \
+    do { if (0) fprintf(stderr, "hexter_gtk" __VA_ARGS__); } while (0)
+#define TUIDB_MESSAGE(type, ...) \
+    do { if (0) printf("hexter_text" __VA_ARGS__); } while (0)
 #define DSSP_DEBUG_INIT(x)
 
 #endif  /* DSSP_DEBUG */
