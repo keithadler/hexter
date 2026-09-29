@@ -53,6 +53,7 @@ set(HEXTER_CORE_SOURCES
     src/hexter_synth.c
     src/dx7_bank.c
     src/dx7_voice_4op.c
+    src/dx7_voice_dx7ii.c
     src/dx7_voice_fb01.c)
 
 add_library(hexter_core OBJECT ${HEXTER_CORE_SOURCES})
@@ -279,7 +280,8 @@ if(HEXTER_BUILD_DSSI)
             src/gui_interface.c src/gui_midi.c src/gui_patch_edit.c
             src/gui_retro_console.c src/gui_retro_editor.c src/gui_widgy_alg.c
             src/gui_widgy_editor.c src/dx7_voice_data.c src/dx7_voice_patches.c
-            src/dx7_bank.c src/dx7_voice_4op.c src/dx7_voice_fb01.c)
+            src/dx7_bank.c src/dx7_voice_4op.c
+            src/dx7_voice_dx7ii.c src/dx7_voice_fb01.c)
         target_include_directories(hexter_gtk PRIVATE src ${HEXTER_GTK_INCLUDE_DIRS} ${DSSI_INCLUDE_DIRS})
         target_compile_definitions(hexter_gtk PRIVATE VERSION="${PROJECT_VERSION}" MIDI_ALSA=1)
         target_compile_options(hexter_gtk PRIVATE ${HEXTER_GTK_CFLAGS_OTHER} -Wno-deprecated-declarations)
@@ -324,6 +326,12 @@ if(HEXTER_BUILD_TESTS)
     target_link_libraries(test_fb01 PRIVATE hexter_engine)
     target_compile_options(test_fb01 PRIVATE ${HEXTER_C_FLAGS})
     add_test(NAME fb01 COMMAND test_fb01)
+
+    add_executable(test_dx7ii tests/test_dx7ii.c src/dx7_voice_dx7ii.c
+                   src/dx7_bank.c src/dx7_voice_data.c src/dx7_voice_patches.c
+                   src/dx7_voice_4op.c src/dx7_voice_fb01.c)
+    target_include_directories(test_dx7ii PRIVATE src)
+    add_test(NAME dx7ii COMMAND test_dx7ii)
 
     add_executable(test_4op tests/test_4op.c)
     target_link_libraries(test_4op PRIVATE hexter_engine)

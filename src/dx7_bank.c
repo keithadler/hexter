@@ -27,6 +27,7 @@
 
 #include "hexter_types.h"
 #include "dx7_voice.h"
+#include "dx7_voice_dx7ii.h"
 #include "dx7_voice_4op.h"
 #include "dx7_voice_fb01.h"
 #include "dx7_voice_data.h"
@@ -75,11 +76,24 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
                           const char *filename, dx7_patch_t *firstpatch,
                           int maxpatches, uint8_t (*op_waves)[6], char **errmsg)
 {
+    return dx7_patchbank_parse_dx7ii(raw_patch_data, filelength, filename,
+                                     firstpatch, maxpatches, op_waves,
+                                     NULL, NULL, errmsg);
+}
+
+int
+dx7_patchbank_parse_dx7ii(uint8_t *raw_patch_data, long filelength,
+                          const char *filename, dx7_patch_t *firstpatch,
+                          int maxpatches, uint8_t (*op_waves)[6],
+                          dx7ii_aced_t *extras, int *n_extras, char **errmsg)
+{
     int count;
+    int dx7ii_count = 0;
     int patchstart;
     int midshift;
     int datastart;
     fb01_bank_layout_t fb01;
+    const uint8_t *dx7ii_data;
     int i;
     int op;
 
@@ -176,6 +190,37 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
             count += i;
             patchstart += fb01.size + midshift - 1;
 
+        } else if (dx7ii_amem_at(raw_patch_data, (size_t)filelength,
+                                 (size_t)patchstart, midshift, &dx7ii_data)) {
+            /*
+             * A DX7II bank's second half. The voices came out of the VMEM
+             * dump above, byte for byte the same as a DX7's, which is why
+             * these banks have always half worked here. This is everything
+             * Yamaha added in 1986, and until now it was scanned straight
+             * past without a word.
+             *
+             * It carries no voices, so `count` does not move. The whole dump
+             * is stepped over rather than walked byte by byte, so 1120 bytes
+             * of packed parameters cannot be mistaken for the start of
+             * something else.
+             */
+            if (extras) {
+                for (i = 0; i < DX7II_AMEM_VOICES && i < maxpatches; i++)
+                    dx7ii_amem_unpack(dx7ii_data + i * DX7II_AMEM_VOICE,
+                                      &extras[i]);
+            }
+            dx7ii_count = DX7II_AMEM_VOICES;
+            patchstart += DX7II_AMEM_DUMP + midshift - 1;
+
+        } else if (dx7ii_aced_at(raw_patch_data, (size_t)filelength,
+                                 (size_t)patchstart, midshift, &dx7ii_data)) {
+            /* One voice's extras, as a DX7II sends when dumping its edit
+             * buffer. Same reasoning, one voice instead of thirty two. */
+            if (extras && maxpatches > 0)
+                memcpy(extras[0].raw, dx7ii_data, DX7II_ACED_SIZE);
+            if (dx7ii_count < 1) dx7ii_count = 1;
+            patchstart += DX7II_ACED_DUMP + midshift - 1;
+
         } else if (raw_patch_data[patchstart] == 0xf0 &&
                    raw_patch_data[patchstart + midshift + 1] == 0x43 &&
                    raw_patch_data[patchstart + midshift + 2] <= 0x0f &&
@@ -195,6 +240,8 @@ dx7_patchbank_parse_waves(uint8_t *raw_patch_data, long filelength,
             patchstart += (DX7_DUMP_SIZE_VOICE_SINGLE - 1);
         }
     }
+
+    if (n_extras) *n_extras = dx7ii_count;
 
     /* assume raw DX7/TX7 data if no SysEx header was found. */
     /* assume the user knows what he is doing ;-) */

@@ -104,5 +104,14 @@ by a large number of DX7 and synthesis enthusiasts, including:
         operator waveforms of the four-operator Yamahas from the sine.
         hexter's per-operator waveforms are derived the same way.
 
+    - The DX7II specification collected at
+        https://github.com/probonopd/dx-specs, which credits Derek Cook's
+        YamahaSynthFileFormats and the DX7II service manual and says it was
+        verified against Dexed. hexter's reading of ACED and AMEM is written
+        from that description. The repository carries no licence, which does
+        not matter for this: a file format is a fact rather than a work, and
+        none of their code or files are here. Found for us by Reaper10, who
+        apologised for the missing licence and should not have.
+
 Thanks everybody!  Ain't open source great?
 

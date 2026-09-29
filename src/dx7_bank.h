@@ -24,6 +24,7 @@
 #define _DX7_BANK_H
 
 #include <stdint.h>
+#include "dx7_voice_dx7ii.h"
 
 #include "hexter_types.h"
 
@@ -60,6 +61,25 @@ int dx7_patchbank_parse_waves(uint8_t *data, long length, const char *filename,
 int dx7_patchbank_load_waves(const char *filename, dx7_patch_t *firstpatch,
                              int maxpatches, uint8_t (*op_waves)[6],
                              char **errmsg);
+
+/*
+ * And the same again, also reporting a DX7II bank's extra voice data.
+ *
+ * A DX7II bank is two dumps: the voices, which are byte for byte a DX7's and
+ * have always loaded here, and an AMEM block holding everything Yamaha added
+ * in 1986. That second block has been arriving and falling on the floor with
+ * nothing said about it. 'extras' may be NULL; when it is not, it is filled
+ * with one entry per patch and '*n_extras' is set to how many voices the file
+ * actually carried extras for, which is 0 for every plain DX7 bank.
+ *
+ * Nothing in the engine acts on these yet. Reading them is separate from, and
+ * has to come before, deciding what to do with them.
+ */
+int dx7_patchbank_parse_dx7ii(uint8_t *data, long length, const char *filename,
+                              dx7_patch_t *firstpatch, int maxpatches,
+                              uint8_t (*op_waves)[6],
+                              dx7ii_aced_t *extras, int *n_extras,
+                              char **errmsg);
 
 #ifdef __cplusplus
 }
