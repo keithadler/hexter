@@ -16,6 +16,7 @@
 		5879C833A0AC1E3B672EDDF5 /* dx7_voice.c in Sources */ = {isa = PBXBuildFile; fileRef = E5F09903F79E1C19658E37B6 /* dx7_voice.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
 		7852E5E32B056774E21A048E /* KeyboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C5599CB79BD5612069CC8D7 /* KeyboardView.swift */; };
 		82C35BFE405ED39056491B94 /* dx7_voice_render.c in Sources */ = {isa = PBXBuildFile; fileRef = 72EAD61194614A2BCABA9749 /* dx7_voice_render.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
+		84FFA98EB71BEE2A19672A5D /* dx7_voice_dx7ii.c in Sources */ = {isa = PBXBuildFile; fileRef = 152D11876556849DF80D401B /* dx7_voice_dx7ii.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
 		972DD0E1852A1F4375F93B03 /* fb01_roms_converted_34.dx7 in Resources */ = {isa = PBXBuildFile; fileRef = BA51CC94CEFD489772D849B1 /* fb01_roms_converted_34.dx7 */; };
 		9A513D82FB616EC8582E3226 /* dx7_voice_data.c in Sources */ = {isa = PBXBuildFile; fileRef = 197509265D223ED370CF1B4F /* dx7_voice_data.c */; settings = {COMPILER_FLAGS = "-O2 -ffp-contract=off -Wno-shorten-64-to-32"; }; };
 		9FFE08841F7229F578C01DEE /* MIDIInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30257175514F0BC0A306BE3B /* MIDIInput.swift */; };
@@ -35,11 +36,13 @@
 /* Begin PBXFileReference section */
 		0067340DE83F8E93F89192F5 /* hexter_mutex.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_mutex.h; sourceTree = "<group>"; };
 		0EA6CD95DAFE0964B5C9B502 /* dx7_voice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_voice.h; sourceTree = "<group>"; };
+		152D11876556849DF80D401B /* dx7_voice_dx7ii.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_dx7ii.c; sourceTree = "<group>"; };
 		153C925540EA071FE51C9FFB /* dx7_bank.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_bank.c; sourceTree = "<group>"; };
 		16B8666126CD866294F95D5A /* dx7_voice_fb01.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_voice_fb01.h; sourceTree = "<group>"; };
 		197509265D223ED370CF1B4F /* dx7_voice_data.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = dx7_voice_data.c; sourceTree = "<group>"; };
 		19E5B5EDB85428D18D90B9D9 /* hexter_engine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hexter_engine.h; sourceTree = "<group>"; };
 		20E78208485B633DBD4CF73E /* gui_interface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gui_interface.h; sourceTree = "<group>"; };
+		2A53AC5CA89A5404C514360F /* dx7_voice_dx7ii.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dx7_voice_dx7ii.h; sourceTree = "<group>"; };
 		2E836EBA05271B5370BEEDC7 /* hexter_synth.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hexter_synth.c; sourceTree = "<group>"; };
 		30187A0D97C6225077E84E89 /* default_patches.dx7 */ = {isa = PBXFileReference; path = default_patches.dx7; sourceTree = "<group>"; };
 		30257175514F0BC0A306BE3B /* MIDIInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIInput.swift; sourceTree = "<group>"; };
@@ -99,6 +102,8 @@
 				73B330E2105F0AB1D2C2D48B /* dx7_voice_4op.h */,
 				197509265D223ED370CF1B4F /* dx7_voice_data.c */,
 				409100CCFBAB002832D6071E /* dx7_voice_data.h */,
+				152D11876556849DF80D401B /* dx7_voice_dx7ii.c */,
+				2A53AC5CA89A5404C514360F /* dx7_voice_dx7ii.h */,
 				D6A3A75A807089F7B5AFF7B6 /* dx7_voice_fb01.c */,
 				16B8666126CD866294F95D5A /* dx7_voice_fb01.h */,
 				991EEEA5F9F39E1B822D9EC3 /* dx7_voice_patches.c */,
@@ -268,6 +273,7 @@
 				5879C833A0AC1E3B672EDDF5 /* dx7_voice.c in Sources */,
 				4AFA57C02D0B36158653A86B /* dx7_voice_4op.c in Sources */,
 				9A513D82FB616EC8582E3226 /* dx7_voice_data.c in Sources */,
+				84FFA98EB71BEE2A19672A5D /* dx7_voice_dx7ii.c in Sources */,
 				D4BBEAB64A1646FCD7529BD7 /* dx7_voice_fb01.c in Sources */,
 				E598180FE637C90F0BC1674D /* dx7_voice_patches.c in Sources */,
 				82C35BFE405ED39056491B94 /* dx7_voice_render.c in Sources */,

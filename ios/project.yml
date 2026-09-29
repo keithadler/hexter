@@ -35,6 +35,7 @@ targets:
           - hexter_synth.c
           - dx7_bank.c
           - dx7_voice_4op.c
+          - dx7_voice_dx7ii.c
           - dx7_voice_fb01.c
           - hexter_engine.c
           - "*.h"
