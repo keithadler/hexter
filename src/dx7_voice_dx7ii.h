@@ -100,6 +100,36 @@ int dx7ii_aced_at(const uint8_t *buf, size_t len, size_t pos, int midshift,
  */
 int dx7ii_aced_describe(const dx7ii_aced_t *a, char *out, size_t cap);
 
+/*
+ * What a DX7II voice would set on a DX7's front panel.
+ *
+ * On a DX7 the controller routings, the bend range and the portamento time are
+ * function data: global, set once, the same for every patch. hexter holds them
+ * on the instance and sets them from its performance buffer, next to Sean
+ * Bolton's own note reading "-FIX- later these will optionally come from
+ * patch". The DX7II is the machine that does exactly that, keeping them per
+ * voice in ACED, so this converts one into the other.
+ *
+ * Two of them are exact. The routings are not, and it is worth knowing which
+ * way: a DX7 has one sensitivity per controller shared by its three
+ * destinations, and a DX7II has an independent depth for each. A voice that
+ * sends the mod wheel hard to pitch and gently to amplitude cannot be
+ * expressed, so the strongest depth wins and `flattened` counts how many
+ * controllers lost a distinction that way. Nothing is silently rounded.
+ */
+typedef struct {
+    uint8_t pitch_bend_range;        /* semitones, 0 to 12 */
+    uint8_t portamento_time;         /* 0 to 99 */
+    uint8_t mod_wheel_sensitivity;   /* 0 to 15 */
+    uint8_t mod_wheel_assign;        /* bit 0 pitch, 1 amplitude, 2 EG bias */
+    uint8_t foot_sensitivity,     foot_assign;
+    uint8_t breath_sensitivity,   breath_assign;
+    uint8_t pressure_sensitivity, pressure_assign;
+    int     flattened;               /* controllers whose depths had to become one */
+} dx7ii_controllers_t;
+
+void dx7ii_aced_controllers(const dx7ii_aced_t *a, dx7ii_controllers_t *out);
+
 /* The Yamaha checksum: the low seven bits of the negated sum of the data. */
 uint8_t dx7ii_checksum(const uint8_t *data, size_t len);
 

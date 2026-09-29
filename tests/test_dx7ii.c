@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stddef.h>
 
 #include "dx7_voice_dx7ii.h"
 #include "dx7_bank.h"
@@ -403,9 +404,121 @@ static void test_a_whole_dx7ii_bank(void)
     free(file);
 }
 
+/*
+ * ACED into the fields a DX7 instance already has.
+ *
+ * The two that are exact have to stay exact, the lossy ones have to lose in
+ * the stated direction, and the count of what was lost has to be right, or the
+ * report built on it is worse than no report.
+ */
+static void test_controllers(void)
+{
+    printf("-- a DX7II voice's controller settings, as a DX7 would hold them --\n");
+
+    dx7ii_aced_t a;
+    dx7ii_controllers_t c;
+
+    /* the exact two */
+    memset(&a, 0, sizeof a);
+    a.raw[A_PB_RANGE]   = 7;
+    a.raw[A_PORTA_TIME] = 64;
+    dx7ii_aced_controllers(&a, &c);
+    ok(c.pitch_bend_range == 7, "the bend range crosses unchanged (got %u)", c.pitch_bend_range);
+    ok(c.portamento_time == 64, "and so does the portamento time (got %u)", c.portamento_time);
+
+    a.raw[A_PB_RANGE]   = 99;      /* past what a DX7 holds */
+    a.raw[A_PORTA_TIME] = 200;
+    dx7ii_aced_controllers(&a, &c);
+    ok(c.pitch_bend_range == 12, "an out of range bend is clamped to 12 (got %u)", c.pitch_bend_range);
+    ok(c.portamento_time == 99, "and the portamento time to 99 (got %u)", c.portamento_time);
+
+    /* the assign bits are exact: on is on */
+    struct { int off, bit; const char *what; } dest[] = {
+        { 0, 0x01, "pitch" }, { 1, 0x02, "amplitude" }, { 2, 0x04, "EG bias" },
+    };
+    for (size_t i = 0; i < sizeof dest / sizeof dest[0]; i++) {
+        memset(&a, 0, sizeof a);
+        a.raw[A_MW + dest[i].off] = 50;
+        dx7ii_aced_controllers(&a, &c);
+        ok(c.mod_wheel_assign == dest[i].bit,
+           "the mod wheel going to %s sets bit 0x%02x and no other (got 0x%02x)",
+           dest[i].what, dest[i].bit, c.mod_wheel_assign);
+        ok(c.flattened == 0, "and one destination loses nothing");
+    }
+
+    /* volume, the fourth destination, is not something a DX7 routes */
+    memset(&a, 0, sizeof a);
+    a.raw[A_FC1 + 3] = 99;
+    dx7ii_aced_controllers(&a, &c);
+    ok(c.foot_assign == 0,
+       "a routing to volume has nowhere to go on a DX7 (got 0x%02x)", c.foot_assign);
+
+    /* the scale, at both ends and in the middle */
+    struct { uint8_t depth, want; } scale[] = {
+        { 0, 0 }, { 1, 1 }, { 33, 5 }, { 50, 8 }, { 66, 10 }, { 99, 15 },
+    };
+    for (size_t i = 0; i < sizeof scale / sizeof scale[0]; i++) {
+        memset(&a, 0, sizeof a);
+        a.raw[A_MW] = scale[i].depth;
+        dx7ii_aced_controllers(&a, &c);
+        ok(c.mod_wheel_sensitivity == scale[i].want,
+           "a depth of %u becomes a sensitivity of %u (got %u)",
+           scale[i].depth, scale[i].want, c.mod_wheel_sensitivity);
+    }
+
+    /* a small depth must not round away to nothing, which is the difference
+     * between a subtle routing and a dead control */
+    memset(&a, 0, sizeof a);
+    a.raw[A_MW] = 4;
+    dx7ii_aced_controllers(&a, &c);
+    ok(c.mod_wheel_sensitivity > 0,
+       "a depth of 4 is faint, not off (got %u)", c.mod_wheel_sensitivity);
+
+    /* the lossy case, and that it is counted */
+    memset(&a, 0, sizeof a);
+    a.raw[A_MW + 0] = 99;   /* hard to pitch */
+    a.raw[A_MW + 1] = 20;   /* gently to amplitude */
+    dx7ii_aced_controllers(&a, &c);
+    ok(c.mod_wheel_assign == 0x03, "both destinations stay switched on");
+    ok(c.mod_wheel_sensitivity == 15, "the strongest depth is the one kept (got %u)",
+       c.mod_wheel_sensitivity);
+    ok(c.flattened == 1, "and the flattening is counted once (got %d)", c.flattened);
+
+    /* equal depths lose nothing, so they must not be counted */
+    memset(&a, 0, sizeof a);
+    a.raw[A_MW + 0] = 60;
+    a.raw[A_MW + 1] = 60;
+    dx7ii_aced_controllers(&a, &c);
+    ok(c.flattened == 0, "two destinations at the same depth lose nothing (got %d)",
+       c.flattened);
+
+    /* every controller is wired, not just the first */
+    struct { int off; const char *name; size_t sens, asg; } all[] = {
+        { A_MW,  "mod wheel",  offsetof(dx7ii_controllers_t, mod_wheel_sensitivity),
+                               offsetof(dx7ii_controllers_t, mod_wheel_assign) },
+        { A_FC1, "foot",       offsetof(dx7ii_controllers_t, foot_sensitivity),
+                               offsetof(dx7ii_controllers_t, foot_assign) },
+        { A_BC,  "breath",     offsetof(dx7ii_controllers_t, breath_sensitivity),
+                               offsetof(dx7ii_controllers_t, breath_assign) },
+        { A_AT,  "aftertouch", offsetof(dx7ii_controllers_t, pressure_sensitivity),
+                               offsetof(dx7ii_controllers_t, pressure_assign) },
+    };
+    for (size_t i = 0; i < sizeof all / sizeof all[0]; i++) {
+        memset(&a, 0, sizeof a);
+        a.raw[all[i].off + 1] = 99;          /* to amplitude */
+        dx7ii_aced_controllers(&a, &c);
+        const uint8_t sens = *((const uint8_t *)&c + all[i].sens);
+        const uint8_t asg  = *((const uint8_t *)&c + all[i].asg);
+        ok(sens == 15 && asg == 0x02,
+           "the %s is wired through as well (sensitivity %u, assign 0x%02x)",
+           all[i].name, sens, asg);
+    }
+}
+
 int main(void)
 {
     printf("DX7II extra voice data\n\n");
+    test_controllers();
     test_a_whole_dx7ii_bank();
     test_bit_positions();
     test_the_bit_that_cannot_survive();

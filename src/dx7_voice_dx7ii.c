@@ -212,6 +212,73 @@ int dx7ii_aced_at(const uint8_t *buf, size_t len, size_t pos, int midshift,
 
 /* ------------------------------------------------------------------------ */
 
+/*
+ * One controller's three depths become one sensitivity and a set of bits.
+ *
+ * `assign` says which destinations are live, which is exact: a depth of zero
+ * is off and anything else is on. `sensitivity` is the strongest of them
+ * rescaled from 0..99 to 0..15. Taking the strongest rather than an average
+ * keeps the routing the voice leant on and exaggerates the one it did not,
+ * which is the failure that sounds like the patch rather than like a bug.
+ */
+static int one_controller(const uint8_t *depths, int n,
+                          uint8_t *sensitivity, uint8_t *assign)
+{
+    uint8_t bits = 0, strongest = 0;
+    int live = 0;
+
+    /* Only the first three destinations exist on a DX7. The fourth that some
+     * of these carry is volume, which a DX7 has no routing for at all. */
+    for (int i = 0; i < n && i < 3; i++) {
+        if (depths[i]) {
+            bits |= (uint8_t)(1u << i);
+            live++;
+            if (depths[i] > strongest) strongest = depths[i];
+        }
+    }
+
+    if (strongest > 99) strongest = 99;
+    *assign = bits;
+    /*
+     * 99 maps to 15, rounded to nearest. And any depth the voice actually set
+     * keeps at least a sensitivity of 1, because rounding a live routing down
+     * to zero turns a subtle control into a dead one, which is a worse lie
+     * than making it slightly too strong. A depth of 1 rounds to 0 without
+     * this, which is what the test caught.
+     */
+    if (strongest == 0) {
+        *sensitivity = 0;
+    } else {
+        unsigned v = (strongest * 15u + 49u) / 99u;
+        *sensitivity = (uint8_t)(v ? v : 1u);
+    }
+
+    /* More than one destination live with differing depths is the case a DX7
+     * cannot hold. Equal depths lose nothing. */
+    if (live > 1) {
+        for (int i = 0; i < n && i < 3; i++)
+            if (depths[i] && depths[i] != strongest) return 1;
+    }
+    return 0;
+}
+
+void dx7ii_aced_controllers(const dx7ii_aced_t *a, dx7ii_controllers_t *out)
+{
+    const uint8_t *r = a->raw;
+    memset(out, 0, sizeof(*out));
+
+    /* These two are the same number on both machines. */
+    out->pitch_bend_range = (uint8_t)(r[A_PB_RANGE] > 12 ? 12 : r[A_PB_RANGE]);
+    out->portamento_time  = (uint8_t)(r[A_PORTA_TIME] > 99 ? 99 : r[A_PORTA_TIME]);
+
+    int lost = 0;
+    lost += one_controller(r + A_MW,  3, &out->mod_wheel_sensitivity, &out->mod_wheel_assign);
+    lost += one_controller(r + A_FC1, 4, &out->foot_sensitivity,      &out->foot_assign);
+    lost += one_controller(r + A_BC,  4, &out->breath_sensitivity,    &out->breath_assign);
+    lost += one_controller(r + A_AT,  4, &out->pressure_sensitivity,  &out->pressure_assign);
+    out->flattened = lost;
+}
+
 static const char *voice_mode_name(unsigned v)
 {
     switch (v & 3) {
