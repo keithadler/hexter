@@ -26,6 +26,8 @@
 
 #include "dx7_voice_dx7ii.h"
 #include "dx7_bank.h"
+#include "hexter_synth.h"
+#include "hexter_engine.h"
 #include "dx7_voice.h"
 
 static int passed, failed;
@@ -515,9 +517,107 @@ static void test_controllers(void)
     }
 }
 
+/*
+ * The end of the line: does selecting a DX7II voice actually change what the
+ * engine will do with the wheels?
+ *
+ * Everything above this checks bytes. This checks the thing a player would
+ * notice, and the two failures it guards against are opposite. A DX7II voice
+ * that does not set its own bend range is the feature never arriving. A plain
+ * DX7 voice that resets one is the feature arriving too eagerly and wiping
+ * what somebody set by hand.
+ */
+static void test_selecting_a_voice(void)
+{
+    printf("-- selecting a DX7II voice sets its controllers, a DX7 voice does not --\n");
+
+    hexter_engine_t *e = hexter_engine_new(48000.0f);
+    ok(e != NULL, "an engine can be made");
+    if (!e) return;
+
+    /* two voices' worth of packed patch data; the bytes do not matter here */
+    uint8_t packed[2 * DX7_VOICE_SIZE_PACKED];
+    for (size_t i = 0; i < sizeof packed; i++) packed[i] = (uint8_t)(i & 0x7f);
+
+    dx7ii_aced_t extras[2];
+    memset(extras, 0, sizeof extras);
+    /*
+     * Every value here is chosen to differ from what the engine already holds,
+     * and that is not fussiness. hexter starts with mod_wheel_sensitivity 15
+     * and mod_wheel_assign 0x01, which is the DX7's own default of the wheel
+     * going to pitch at full depth. The first version of this test asserted
+     * exactly those two numbers, so both passed with the code that sets them
+     * deleted. A test whose expected value is the default is not a test.
+     *
+     * So: the wheel goes to EG bias rather than pitch, at a middling depth.
+     */
+    extras[0].raw[A_PB_RANGE]   = 7;      /* default is 2  */
+    extras[0].raw[A_PORTA_TIME] = 55;     /* default is 0  */
+    extras[0].raw[A_MW + 2]     = 40;     /* EG bias, so assign 0x04, not 0x01 */
+    extras[0].raw[A_BC + 0]     = 20;     /* breath to pitch; default is 0x02 */
+    extras[0].raw[A_AT + 1]     = 80;     /* aftertouch to amplitude, its own
+                                             destination and its own depth, so
+                                             wiring it to the breath fields by
+                                             mistake is visible */
+    /* program 1: nothing set at all, which is a real DX7II voice that routes
+     * nothing, and must be applied as such rather than skipped */
+    hexter_engine_set_bank_dx7ii(e, 0, packed, 2, NULL, extras, 2);
+
+    /* something the player set by hand, which a DX7II voice is entitled to
+     * overwrite and a DX7 voice is not */
+    hexter_instance_select_program(e, 0, 1);
+    ok(e->pitch_bend_range == 0,
+       "voice 1 sets no bend range, so it reads 0 (got %u)", e->pitch_bend_range);
+
+    hexter_instance_select_program(e, 0, 0);
+    ok(e->pitch_bend_range == 7,
+       "voice 0's bend range of 7 reaches the engine (got %u)", e->pitch_bend_range);
+    ok(e->portamento_time == 55,
+       "and its portamento time (got %u)", e->portamento_time);
+    ok(e->mod_wheel_assign == 0x04,
+       "and the mod wheel is routed to EG bias, not the default pitch (got 0x%02x)",
+       e->mod_wheel_assign);
+    ok(e->mod_wheel_sensitivity == 6,
+       "at the depth the voice asked for, not the default 15 (got %u)",
+       e->mod_wheel_sensitivity);
+    ok(e->breath_assign == 0x01,
+       "and the breath controller is re-routed too (got 0x%02x)", e->breath_assign);
+    ok(e->breath_sensitivity == 3,
+       "at its own depth rather than the default 15 (got %u)", e->breath_sensitivity);
+    ok(e->pressure_assign == 0x02,
+       "and the aftertouch goes where it was told, not where the breath went "
+       "(got 0x%02x)", e->pressure_assign);
+    ok(e->pressure_sensitivity == 12,
+       "at its own depth (got %u)", e->pressure_sensitivity);
+
+    /*
+     * Now a plain DX7 bank over the top. These voices have no extras, so
+     * selecting one must leave the settings where they are rather than
+     * zeroing them.
+     */
+    e->pitch_bend_range = 4;
+    e->mod_wheel_assign = 0x02;
+    hexter_engine_set_bank_dx7ii(e, 0, packed, 2, NULL, NULL, 0);
+    hexter_instance_select_program(e, 0, 0);
+    ok(e->pitch_bend_range == 4,
+       "a DX7 voice leaves a hand-set bend range alone (got %u)", e->pitch_bend_range);
+    ok(e->mod_wheel_assign == 0x02,
+       "and leaves the controller routing alone (got 0x%02x)", e->mod_wheel_assign);
+
+    /* and the old entry point still behaves as a DX7 bank */
+    e->pitch_bend_range = 9;
+    hexter_engine_set_bank_waves(e, 0, packed, 2, NULL);
+    hexter_instance_select_program(e, 0, 0);
+    ok(e->pitch_bend_range == 9,
+       "the pre-existing setter still means no extras (got %u)", e->pitch_bend_range);
+
+    hexter_engine_free(e);
+}
+
 int main(void)
 {
     printf("DX7II extra voice data\n\n");
+    test_selecting_a_voice();
     test_controllers();
     test_a_whole_dx7ii_bank();
     test_bit_positions();

@@ -377,6 +377,15 @@ int
 dx7_patchbank_load_waves(const char *filename, dx7_patch_t *firstpatch,
                          int maxpatches, uint8_t (*op_waves)[6], char **errmsg)
 {
+    return dx7_patchbank_load_dx7ii(filename, firstpatch, maxpatches, op_waves,
+                                    NULL, NULL, errmsg);
+}
+
+int
+dx7_patchbank_load_dx7ii(const char *filename, dx7_patch_t *firstpatch,
+                         int maxpatches, uint8_t (*op_waves)[6],
+                         dx7ii_aced_t *extras, int *n_extras, char **errmsg)
+{
     FILE *fp;
     long filelength;
     unsigned char *raw_patch_data = NULL;
@@ -419,8 +428,9 @@ dx7_patchbank_load_waves(const char *filename, dx7_patch_t *firstpatch,
     }
     fclose(fp);
 
-    count = dx7_patchbank_parse_waves(raw_patch_data, filelength, filename,
-                                      firstpatch, maxpatches, op_waves, errmsg);
+    count = dx7_patchbank_parse_dx7ii(raw_patch_data, filelength, filename,
+                                      firstpatch, maxpatches, op_waves,
+                                      extras, n_extras, errmsg);
     free(raw_patch_data);
     return count;
 }

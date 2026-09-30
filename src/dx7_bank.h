@@ -81,6 +81,12 @@ int dx7_patchbank_parse_dx7ii(uint8_t *data, long length, const char *filename,
                               dx7ii_aced_t *extras, int *n_extras,
                               char **errmsg);
 
+/* Read 'filename' and parse it with dx7_patchbank_parse_dx7ii(). */
+int dx7_patchbank_load_dx7ii(const char *filename, dx7_patch_t *firstpatch,
+                             int maxpatches, uint8_t (*op_waves)[6],
+                             dx7ii_aced_t *extras, int *n_extras,
+                             char **errmsg);
+
 #ifdef __cplusplus
 }
 #endif

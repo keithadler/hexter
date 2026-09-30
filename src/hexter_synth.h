@@ -29,6 +29,7 @@
 #include "hexter_mutex.h"
 
 #include "hexter_types.h"
+#include "dx7_voice_dx7ii.h"
 #include "hexter.h"
 
 #define DSSP_MONO_MODE_OFF  0
@@ -86,6 +87,16 @@ struct _hexter_instance_t
      * they ride alongside it. All zero means every operator is a sine, which is
      * a DX7 and is what everything but a converted four-operator bank gets.
      */
+    /*
+     * A DX7II bank carries a second block per voice, and it rides alongside
+     * the patch the same way the operator waveforms do. `patch_has_aced` says
+     * which programs actually came with one: a plain DX7 bank brings none, and
+     * a voice without one must keep whatever the player set by hand rather
+     * than being reset to zeros.
+     */
+    dx7ii_aced_t    patch_aced[128];
+    uint8_t         patch_has_aced[128];
+
     uint8_t         patch_op_wave[128][6];   /* 6 is MAX_DX7_OPERATORS, which */
     uint8_t         current_op_wave[6];      /* dx7_voice.h defines and this    */
     uint8_t         overlay_op_wave[6];      /* header cannot see from here     */

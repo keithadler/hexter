@@ -327,9 +327,11 @@ if(HEXTER_BUILD_TESTS)
     target_compile_options(test_fb01 PRIVATE ${HEXTER_C_FLAGS})
     add_test(NAME fb01 COMMAND test_fb01)
 
-    add_executable(test_dx7ii tests/test_dx7ii.c src/dx7_voice_dx7ii.c
-                   src/dx7_bank.c src/dx7_voice_data.c src/dx7_voice_patches.c
-                   src/dx7_voice_4op.c src/dx7_voice_fb01.c)
+    # It now reaches into the engine, so it links the engine rather than a
+    # hand-picked list of the files it happened to need.
+    add_executable(test_dx7ii tests/test_dx7ii.c)
+    target_link_libraries(test_dx7ii PRIVATE hexter_engine)
+    target_compile_options(test_dx7ii PRIVATE ${HEXTER_C_FLAGS})
     target_include_directories(test_dx7ii PRIVATE src)
     add_test(NAME dx7ii COMMAND test_dx7ii)
 

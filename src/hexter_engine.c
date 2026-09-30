@@ -391,6 +391,16 @@ hexter_engine_set_bank_waves(hexter_engine_t *instance, int first_program,
                              const uint8_t *packed, int count,
                              const uint8_t (*op_waves)[6])
 {
+    return hexter_engine_set_bank_dx7ii(instance, first_program, packed, count,
+                                        op_waves, NULL, 0);
+}
+
+int
+hexter_engine_set_bank_dx7ii(hexter_engine_t *instance, int first_program,
+                             const uint8_t *packed, int count,
+                             const uint8_t (*op_waves)[6],
+                             const dx7ii_aced_t *extras, int n_extras)
+{
     if (first_program < 0 || first_program >= 128 || count <= 0) return 0;
     if (first_program + count > 128) count = 128 - first_program;
 
@@ -401,6 +411,23 @@ hexter_engine_set_bank_waves(hexter_engine_t *instance, int first_program,
         memcpy(&instance->patch_op_wave[first_program], op_waves, (size_t)count * 6);
     else
         memset(&instance->patch_op_wave[first_program], 0, (size_t)count * 6);
+
+    /*
+     * The DX7II half, same idea. A voice that arrives without one has its flag
+     * cleared rather than being given a block of zeros: zeros are a real ACED
+     * meaning no controllers at all, and applying that to a DX7 bank would
+     * wipe whatever bend range and controller routings the player had set.
+     */
+    for (int i = 0; i < count; i++) {
+        const int prog = first_program + i;
+        if (extras && i < n_extras) {
+            instance->patch_aced[prog] = extras[i];
+            instance->patch_has_aced[prog] = 1;
+        } else {
+            instance->patch_has_aced[prog] = 0;
+        }
+    }
+
     refresh_current_patch(instance, first_program, count);
     hexter_mutex_unlock(&instance->patches_mutex);
     return count;
@@ -448,6 +475,8 @@ hexter_engine_load_bank_file(hexter_engine_t *instance, const char *path,
 {
     dx7_patch_t tmp[128];
     uint8_t waves[128][6];
+    dx7ii_aced_t extras[128];
+    int n_extras = 0;
     int count;
 
     if (errmsg) *errmsg = NULL;
@@ -456,10 +485,12 @@ hexter_engine_load_bank_file(hexter_engine_t *instance, const char *path,
         if (errmsg) *errmsg = strdup("bank position out of range");
         return 0;
     }
-    count = dx7_patchbank_load_waves(path, tmp, 128 - first_program, waves, errmsg);
+    count = dx7_patchbank_load_dx7ii(path, tmp, 128 - first_program, waves,
+                                     extras, &n_extras, errmsg);
     if (count <= 0) return 0;
-    return hexter_engine_set_bank_waves(instance, first_program, (const uint8_t *)tmp,
-                                        count, (const uint8_t (*)[6])waves);
+    return hexter_engine_set_bank_dx7ii(instance, first_program, (const uint8_t *)tmp,
+                                        count, (const uint8_t (*)[6])waves,
+                                        extras, n_extras);
 }
 
 int
@@ -469,6 +500,8 @@ hexter_engine_load_bank_memory(hexter_engine_t *instance, const uint8_t *data,
 {
     dx7_patch_t tmp[128];
     uint8_t waves[128][6];
+    dx7ii_aced_t extras[128];
+    int n_extras = 0;
     uint8_t *scratch;
     int count;
 
@@ -489,12 +522,14 @@ hexter_engine_load_bank_memory(hexter_engine_t *instance, const uint8_t *data,
         return 0;
     }
     memcpy(scratch, data, size);
-    count = dx7_patchbank_parse_waves(scratch, (long)size, name_hint, tmp,
-                                      128 - first_program, waves, errmsg);
+    count = dx7_patchbank_parse_dx7ii(scratch, (long)size, name_hint, tmp,
+                                      128 - first_program, waves,
+                                      extras, &n_extras, errmsg);
     free(scratch);
     if (count <= 0) return 0;
-    return hexter_engine_set_bank_waves(instance, first_program, (const uint8_t *)tmp,
-                                        count, (const uint8_t (*)[6])waves);
+    return hexter_engine_set_bank_dx7ii(instance, first_program, (const uint8_t *)tmp,
+                                        count, (const uint8_t (*)[6])waves,
+                                        extras, n_extras);
 }
 
 int

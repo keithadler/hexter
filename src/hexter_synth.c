@@ -916,6 +916,34 @@ hexter_instance_select_program(hexter_instance_t *instance, unsigned long bank,
         /* the waveforms live beside the patch, so they follow it */
         memcpy(instance->current_op_wave, instance->patch_op_wave[program], MAX_DX7_OPERATORS);
     }
+
+    /*
+     * A DX7II keeps the bend range, the portamento time and the controller
+     * routings in the voice rather than in global function data, so selecting
+     * one of its voices sets them. That is what the "-FIX- later these will
+     * optionally come from patch" in hexter_instance_set_performance_data has
+     * been waiting for.
+     *
+     * Only for voices that actually arrived with a DX7II block. A plain DX7
+     * bank has none and must leave the player's own settings alone: an ACED
+     * full of zeros is a real voice that routes nothing, and applying that on
+     * every program change would silently wipe a bend range somebody set by
+     * hand.
+     */
+    if (instance->patch_has_aced[program]) {
+        dx7ii_controllers_t ctl;
+        dx7ii_aced_controllers(&instance->patch_aced[program], &ctl);
+        instance->pitch_bend_range      = ctl.pitch_bend_range;
+        instance->portamento_time       = ctl.portamento_time;
+        instance->mod_wheel_sensitivity = ctl.mod_wheel_sensitivity;
+        instance->mod_wheel_assign      = ctl.mod_wheel_assign;
+        instance->foot_sensitivity      = ctl.foot_sensitivity;
+        instance->foot_assign           = ctl.foot_assign;
+        instance->breath_sensitivity    = ctl.breath_sensitivity;
+        instance->breath_assign         = ctl.breath_assign;
+        instance->pressure_sensitivity  = ctl.pressure_sensitivity;
+        instance->pressure_assign       = ctl.pressure_assign;
+    }
 }
 
 /*

@@ -43,6 +43,8 @@ extern "C" {
 
 #define HEXTER_ENGINE_VERSION "2.0.0"
 
+#include "dx7_voice_dx7ii.h"
+
 typedef struct _hexter_instance_t hexter_engine_t;
 
 /* voice assignment modes (hexter_engine_set_mono_mode) */
@@ -126,6 +128,16 @@ int   hexter_engine_set_bank(hexter_engine_t *e, int first_program, const uint8_
 int   hexter_engine_set_bank_waves(hexter_engine_t *e, int first_program,
                                    const uint8_t *packed, int count,
                                    const uint8_t (*op_waves)[6]);
+
+/*
+ * As above, and also carrying a DX7II bank's extra voice data. `extras` may be
+ * NULL, in which case the programs written are marked as having none, which is
+ * what a plain DX7 bank is.
+ */
+int hexter_engine_set_bank_dx7ii(hexter_engine_t *instance, int first_program,
+                                 const uint8_t *packed, int count,
+                                 const uint8_t (*op_waves)[6],
+                                 const dx7ii_aced_t *extras, int n_extras);
 /*
  * The operator waveforms of the sounding patch: one per operator, 0 being the
  * sine a DX7 has and 1 to 7 the other shapes the four-operator machines from
