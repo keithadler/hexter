@@ -41,7 +41,13 @@
 extern "C" {
 #endif
 
-#define HEXTER_ENGINE_VERSION "2.0.0"
+/* The release version, defined by every build (CMake, Android and iOS all pass VERSION). It used to be a literal
+ * "2.0.0" that nobody updated, so hosts listed every release of the plugins as 2.0.0. */
+#ifdef VERSION
+#define HEXTER_ENGINE_VERSION VERSION
+#else
+#error "VERSION must be defined by the build (the release version, as a string)"
+#endif
 
 #include "dx7_voice_dx7ii.h"
 
