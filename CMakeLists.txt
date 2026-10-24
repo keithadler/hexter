@@ -82,6 +82,13 @@ endif()
 if(NOT MSVC)
     target_link_libraries(hexter_engine PUBLIC m)
 endif()
+if(MINGW)
+    # With -static, libwinpthread references fesetenv (libmingwex), which needs __mingw_fe_dfl_env from libmingw32.
+    # gcc appends libwinpthread after the libraries named here, so on MSYS2's GCC 16 the linker had already passed
+    # libmingw32 and the symbol stayed undefined. Name all three together, in a group, so each can be searched
+    # again for what the others need.
+    target_link_libraries(hexter_engine PUBLIC -Wl,--start-group -lwinpthread -lmingwex -lmingw32 -Wl,--end-group)
+endif()
 if(WIN32)
     target_compile_definitions(hexter_engine PUBLIC _USE_MATH_DEFINES)
 endif()
