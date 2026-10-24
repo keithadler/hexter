@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.9.0 (2026-10-24)
+
+### Added
+- **hexter reads the DX7II's extra voice data.** A DX7II bank is two dumps: VMEM, byte for byte what a DX7 sends
+  (which is why these banks always half worked here), then a 1120-byte AMEM holding what Yamaha added in 1986. hexter
+  used to scan straight past it. `src/dx7_voice_dx7ii.c` now reads it, and the bank scanner recognizes AMEM and a
+  single voice's ACED and steps over the whole dump. The layout comes from the DX7II specification at
+  probonopd/dx-specs, credited in AUTHORS. Existing entry points are unchanged, so a plain DX7 bank behaves as it did.
+- **Selecting a DX7II voice applies its controllers.** The bend range, portamento time and the four controller
+  routings come from the voice, which is what Sean Bolton's `-FIX- later these will optionally come from patch` note
+  in `hexter_instance_set_performance_data` was waiting for. The routings cannot cross cleanly (a DX7 has one
+  sensitivity per controller, a DX7II one per destination), so the assign bits stay exact, the strongest depth becomes
+  the sensitivity, and the conversion counts the controllers that lost a distinction. A voice that came without extras
+  leaves your settings alone.
+
+### Changed
+- **Checked every difference from Sean Bolton's FB-01 converter.** Over all 56 banks he sent (2688 voices), each
+  difference from his converter is explained for that voice, and the six remaining classes are deliberate. Corrects a
+  claim made in 2.8.0.
+- **The build has zero warnings**, so the next one can be seen. `DEBUG_MESSAGE` now type-checks its arguments in
+  release builds.
+
+### Fixed
+- One debug macro call in the GTK GUI had no semicolon and failed only on Linux. `tools/check-debug-macros.sh` finds
+  the class, and CI runs it.
+- The DX7II reader is in the Android and iOS source lists too (the iOS project is updated in both
+  `ios/project.yml` and the committed Xcode project).
+
 ## 2.8.0 (2026-09-21)
 
 ### Changed
