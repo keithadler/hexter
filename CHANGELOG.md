@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.9.1 (2026-10-24)
+
+### Fixed
+- **The plugins and `hexter-render` reported version 2.0.0.** `HEXTER_ENGINE_VERSION` was a literal nobody had updated,
+  and the CLAP plugin descriptor and `hexter-render` took it, so a plugin host listed every release since 2.0.0 as
+  2.0.0. It now follows the release version that every build already defines (CMake, Android and iOS), and a build that
+  does not define one fails instead of guessing. The macOS bundle and the DSSI and GTK builds already had the right number.
+- **The Windows MinGW build failed to link** on MSYS2's current toolchain (GCC 16.2): `undefined reference to
+  __mingw_fe_dfl_env`. With `-static`, `libwinpthread` needs `fesetenv` from `libmingwex`, which needs a symbol from
+  `libmingw32`, and gcc added `libwinpthread` after the libraries the build named, so the linker had already passed
+  `libmingw32`. The three are now linked as one group. The 2.9.0 release packages were not affected; this keeps the build green.
+
 ## 2.9.0 (2026-10-24)
 
 ### Added
